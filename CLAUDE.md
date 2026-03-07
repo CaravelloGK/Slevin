@@ -289,3 +289,8 @@ See `supabase/migrations/` for full schema.
 - `feat:` new features, `fix:` bug fixes, `refactor:` code changes
 - Feature branches from `main`, PRs required
 - Deploy: Vercel preview on PR, production on merge to `main`
+
+## Communication
+Please communicate with me in Russian during our conversations, 
+but keep all code, comments, variable names, and technical 
+documents in English.
