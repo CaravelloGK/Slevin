@@ -1,8 +1,17 @@
 'use server'
 
 import { z } from 'zod'
+import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
 import type { ApiResponse } from '@/types/api'
+import type { Database } from '@/types/database.types'
+
+function createServiceClient() {
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+}
 
 // ---- Schemas ----------------------------------------------------------------
 
@@ -51,25 +60,24 @@ export async function recordKnockout(
     return { success: false, error: 'Invalid input' }
   }
 
-  const { user, supabase } = await getAuthorizedUser()
-  if (!user || !supabase) {
+  const { user } = await getAuthorizedUser()
+  if (!user) {
     return { success: false, error: 'Unauthorized' }
   }
 
-  const { data, error } = await supabase.functions.invoke('bounty-knockout', {
-    body: {
-      tournament_id: parsed.data.tournament_id,
-      killer_id: parsed.data.killer_id,
-      victim_id: parsed.data.victim_id,
-      actor_id: user.id,
-    },
+  const db = createServiceClient()
+  const { error } = await db.rpc('process_knockout', {
+    p_tournament_id: parsed.data.tournament_id,
+    p_killer_id: parsed.data.killer_id,
+    p_victim_id: parsed.data.victim_id,
+    p_actor_id: null,
   })
 
   if (error) {
-    return { success: false, error: 'Knockout failed', code: 'FUNCTION_ERROR' }
+    return { success: false, error: error.message, code: 'DB_ERROR' }
   }
 
-  return { success: true, data: data as { message: string } }
+  return { success: true, data: { message: 'ok' } }
 }
 
 export async function recordRebuy(
@@ -80,24 +88,23 @@ export async function recordRebuy(
     return { success: false, error: 'Invalid input' }
   }
 
-  const { user, supabase } = await getAuthorizedUser()
-  if (!user || !supabase) {
+  const { user } = await getAuthorizedUser()
+  if (!user) {
     return { success: false, error: 'Unauthorized' }
   }
 
-  const { data, error } = await supabase.functions.invoke('bounty-rebuy', {
-    body: {
-      tournament_id: parsed.data.tournament_id,
-      player_id: parsed.data.player_id,
-      actor_id: user.id,
-    },
+  const db = createServiceClient()
+  const { error } = await db.rpc('process_rebuy', {
+    p_tournament_id: parsed.data.tournament_id,
+    p_player_id: parsed.data.player_id,
+    p_actor_id: null,
   })
 
   if (error) {
-    return { success: false, error: 'Rebuy failed', code: 'FUNCTION_ERROR' }
+    return { success: false, error: error.message, code: 'DB_ERROR' }
   }
 
-  return { success: true, data: data as { message: string } }
+  return { success: true, data: { message: 'ok' } }
 }
 
 export async function pauseTimer(
@@ -109,9 +116,35 @@ export async function pauseTimer(
   const { user, supabase } = await getAuthorizedUser()
   if (!user || !supabase) return { success: false, error: 'Unauthorized' }
 
+  // Build update: always set status=paused.
+  // If seconds_remaining is provided, shift level_started_at so the frozen
+  // time survives a page refresh (computeSecondsLeft will return the same value).
+  const update: Record<string, unknown> = { status: 'paused' }
+  if (parsed.data.seconds_remaining !== undefined) {
+    const { data: levelData } = await supabase
+      .from('tournaments')
+      .select('current_level, blind_structure_id')
+      .eq('id', parsed.data.tournament_id)
+      .single()
+
+    if (levelData) {
+      const { data: level } = await supabase
+        .from('blind_levels')
+        .select('duration_minutes')
+        .eq('blind_structure_id', levelData.blind_structure_id)
+        .eq('level_number', levelData.current_level)
+        .single()
+
+      if (level) {
+        const elapsed = level.duration_minutes * 60 - parsed.data.seconds_remaining
+        update.level_started_at = new Date(Date.now() - elapsed * 1000).toISOString()
+      }
+    }
+  }
+
   const { error } = await supabase
     .from('tournaments')
-    .update({ status: 'paused' })
+    .update(update)
     .eq('id', parsed.data.tournament_id)
 
   if (error) return { success: false, error: 'Failed to pause' }

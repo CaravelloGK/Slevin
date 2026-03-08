@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Barlow_Condensed, Space_Mono, Bebas_Neue } from 'next/font/google'
+import { Toaster } from '@/components/ui/sonner'
 
 const barlowCondensed = Barlow_Condensed({
   variable: '--font-barlow',
@@ -41,6 +42,7 @@ export default async function DealerLayout({
       style={{ fontFamily: 'var(--font-barlow), system-ui, sans-serif' }}
     >
       {children}
+      <Toaster position="top-center" />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { toast } from 'sonner'
 import { useBlindTimer } from '@/hooks/use-blind-timer'
 import { useTournamentRealtime } from '@/hooks/use-tournament-realtime'
 import { useOfflineQueue } from '@/hooks/use-offline-queue'
@@ -48,7 +49,7 @@ export function DealerPanel({
 
       const result = await recordKnockout(payload)
       if (!result.success) {
-        console.error('Knockout failed:', result.error)
+        toast.error(`Knockout error: ${result.error}`)
       }
       setKnockoutVictim(null)
     },
@@ -68,7 +69,7 @@ export function DealerPanel({
 
       const result = await recordRebuy(payload)
       if (!result.success) {
-        console.error('Rebuy failed:', result.error)
+        toast.error(`Rebuy error: ${result.error}`)
       }
       setRebuyPlayer(null)
     },

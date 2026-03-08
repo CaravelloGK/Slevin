@@ -23,17 +23,17 @@ export function KnockoutDialog({
   const [confirming, setConfirming] = useState(false)
 
   const eligibleKillers = allPlayers.filter(
-    (p) => p.id !== victim.id && p.status !== 'eliminated',
+    (p) => p.player_id !== victim.player_id && p.status !== 'eliminated',
   )
 
-  const selectedKiller = eligibleKillers.find((p) => p.id === selectedKillerId)
+  const selectedKiller = eligibleKillers.find((p) => p.player_id === selectedKillerId)
   const bountyTransfer = Math.floor(victim.current_bounty * 0.5)
 
   async function handleConfirm() {
     if (!selectedKillerId) return
     setConfirming(true)
     try {
-      await onConfirm(selectedKillerId, victim.id)
+      await onConfirm(selectedKillerId, victim.player_id)
     } finally {
       setConfirming(false)
     }
@@ -92,7 +92,7 @@ export function KnockoutDialog({
                     onKnockout={() => {}}
                     onRebuy={() => {}}
                     isSelectingKiller
-                    onSelectAsKiller={(p) => setSelectedKillerId(p.id)}
+                    onSelectAsKiller={(p) => setSelectedKillerId(p.player_id)}
                   />
                 </div>
               ))}

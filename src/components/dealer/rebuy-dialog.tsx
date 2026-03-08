@@ -19,7 +19,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
   async function handleConfirm() {
     setConfirming(true)
     try {
-      await onConfirm(player.id)
+      await onConfirm(player.player_id)
     } finally {
       setConfirming(false)
     }
