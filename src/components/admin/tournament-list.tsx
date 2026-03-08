@@ -116,7 +116,7 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
                       <a href={`/admin/tournaments/${t.id}/register`}>Регистрация игроков</a>
                     </Button>
                   )}
-                  {t.status === 'running' && (
+                  {(t.status === 'running' || t.status === 'paused') && (
                     <Button size="sm" asChild>
                       <a href={`/tournament/${t.id}/dealer`}>Панель дилера</a>
                     </Button>

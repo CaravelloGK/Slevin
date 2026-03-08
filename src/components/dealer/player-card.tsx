@@ -103,20 +103,12 @@ export function PlayerCard({
               ВЫБЫЛ
             </span>
           )}
-          {entry.rebuys > 0 && (
+          {entry.rebuy_count > 0 && (
             <span
               className="text-[10px] font-semibold tracking-wider text-[#8b949e]"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              R×{entry.rebuys}
-            </span>
-          )}
-          {entry.eliminations > 0 && (
-            <span
-              className="text-[10px] font-semibold tracking-wider"
-              style={{ color: '#d4af37', fontFamily: 'var(--font-barlow)' }}
-            >
-              K×{entry.eliminations}
+              R×{entry.rebuy_count}
             </span>
           )}
         </div>

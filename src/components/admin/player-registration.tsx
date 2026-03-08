@@ -30,7 +30,11 @@ export function PlayerRegistration({
     setError(null)
     startTransition(async () => {
       const result = await registerPlayer({ tournament_id: tournament.id, player_id: playerId })
-      if (!result.success) setError(result.error)
+      if (!result.success) {
+        setError(result.error)
+      } else {
+        router.refresh()
+      }
     })
   }
 
@@ -41,7 +45,11 @@ export function PlayerRegistration({
         tournament_id: tournament.id,
         player_id: playerId,
       })
-      if (!result.success) setError(result.error)
+      if (!result.success) {
+        setError(result.error)
+      } else {
+        router.refresh()
+      }
     })
   }
 

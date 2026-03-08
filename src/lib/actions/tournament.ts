@@ -56,7 +56,7 @@ export async function recordKnockout(
     return { success: false, error: 'Unauthorized' }
   }
 
-  const { data, error } = await supabase.functions.invoke('bounty/knockout', {
+  const { data, error } = await supabase.functions.invoke('bounty-knockout', {
     body: {
       tournament_id: parsed.data.tournament_id,
       killer_id: parsed.data.killer_id,
@@ -85,7 +85,7 @@ export async function recordRebuy(
     return { success: false, error: 'Unauthorized' }
   }
 
-  const { data, error } = await supabase.functions.invoke('bounty/rebuy', {
+  const { data, error } = await supabase.functions.invoke('bounty-rebuy', {
     body: {
       tournament_id: parsed.data.tournament_id,
       player_id: parsed.data.player_id,

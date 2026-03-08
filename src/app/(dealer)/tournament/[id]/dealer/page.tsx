@@ -36,8 +36,8 @@ export default async function DealerPanelPage({ params }: Props) {
   const { data: rawPlayers } = await supabase
     .from('tournament_players')
     .select(
-      `id, created_at, tournament_id, player_id, seat_number, status, current_bounty,
-       guaranteed_bounty, eliminations, rebuys, final_position,
+      `id, registered_at, tournament_id, player_id, seat_number, status, current_bounty,
+       guaranteed_bounty, rebuy_count, eliminated_at, final_position,
        player:players(id, created_at, name, nickname, avatar_url)`,
     )
     .eq('tournament_id', id)

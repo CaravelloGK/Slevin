@@ -72,7 +72,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
               className="text-[10px] tracking-[0.2em] text-[#8b949e] uppercase mb-3"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              Ребай №{player.rebuys + 1}
+              Ребай №{player.rebuy_count + 1}
             </div>
 
             <div className="flex items-center justify-center gap-4">

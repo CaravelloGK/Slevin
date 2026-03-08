@@ -80,41 +80,41 @@ export type Database = {
       tournament_players: {
         Row: {
           id: string
-          created_at: string
+          registered_at: string
           tournament_id: string
           player_id: string
           seat_number: number | null
           status: 'active' | 'eliminated' | 'rebought'
           current_bounty: number
           guaranteed_bounty: number
-          eliminations: number
-          rebuys: number
+          rebuy_count: number
+          eliminated_at: string | null
           final_position: number | null
         }
         Insert: {
           id?: string
-          created_at?: string
+          registered_at?: string
           tournament_id: string
           player_id: string
           seat_number?: number | null
           status?: 'active' | 'eliminated' | 'rebought'
           current_bounty: number
           guaranteed_bounty?: number
-          eliminations?: number
-          rebuys?: number
+          rebuy_count?: number
+          eliminated_at?: string | null
           final_position?: number | null
         }
         Update: {
           id?: string
-          created_at?: string
+          registered_at?: string
           tournament_id?: string
           player_id?: string
           seat_number?: number | null
           status?: 'active' | 'eliminated' | 'rebought'
           current_bounty?: number
           guaranteed_bounty?: number
-          eliminations?: number
-          rebuys?: number
+          rebuy_count?: number
+          eliminated_at?: string | null
           final_position?: number | null
         }
         Relationships: [
