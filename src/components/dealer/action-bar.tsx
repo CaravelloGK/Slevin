@@ -11,6 +11,7 @@ interface ActionBarProps {
   onResume: (secondsLeft: number) => void
   onPrevLevel: () => void
   onNextLevel: () => void
+  onEndTournament: () => void
 }
 
 export function ActionBar({
@@ -23,6 +24,7 @@ export function ActionBar({
   onResume,
   onPrevLevel,
   onNextLevel,
+  onEndTournament,
 }: ActionBarProps) {
   return (
     <footer
@@ -97,15 +99,29 @@ export function ActionBar({
         </span>
       </div>
 
-      {/* Right: tournament status label */}
-      <div
-        className="text-xs tracking-[0.3em] uppercase font-semibold"
-        style={{
-          fontFamily: 'var(--font-barlow)',
-          color: isPaused ? '#d29922' : '#2ea043',
-        }}
-      >
-        {isPaused ? '⏸ Пауза' : '● Идёт'}
+      {/* Right: end tournament + status */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onEndTournament}
+          className="px-3 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all duration-150 active:scale-95"
+          style={{
+            background: '#1a0a0a',
+            color: '#da3633',
+            border: '1px solid #3d1f1f',
+            fontFamily: 'var(--font-barlow)',
+          }}
+        >
+          Завершить
+        </button>
+        <div
+          className="text-xs tracking-[0.3em] uppercase font-semibold"
+          style={{
+            fontFamily: 'var(--font-barlow)',
+            color: isPaused ? '#d29922' : '#2ea043',
+          }}
+        >
+          {isPaused ? '⏸ Пауза' : '● Идёт'}
+        </div>
       </div>
     </footer>
   )

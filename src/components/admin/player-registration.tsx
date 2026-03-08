@@ -101,7 +101,7 @@ export function PlayerRegistration({
                   <tr key={rp.id} className="border-b last:border-0">
                     <td className="px-4 py-2 font-medium">{rp.player.name}</td>
                     <td className="px-4 py-2 text-muted-foreground">{rp.player.nickname ?? '-'}</td>
-                    <td className="px-4 py-2">${rp.current_bounty}</td>
+                    <td className="px-4 py-2">₽{rp.current_bounty}</td>
                     <td className="px-4 py-2 text-right">
                       <Button
                         size="sm"

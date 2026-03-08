@@ -43,8 +43,12 @@ export type Database = {
           name: string
           status: 'pending' | 'running' | 'paused' | 'finished'
           bounty_amount: number
+          entry_fee: number
           current_level: number
           level_started_at: string | null
+          started_at: string | null
+          finished_at: string | null
+          prize_distribution: Json
           blind_structure_id: string
         }
         Insert: {
@@ -53,8 +57,12 @@ export type Database = {
           name: string
           status?: 'pending' | 'running' | 'paused' | 'finished'
           bounty_amount: number
+          entry_fee?: number
           current_level?: number
           level_started_at?: string | null
+          started_at?: string | null
+          finished_at?: string | null
+          prize_distribution?: Json
           blind_structure_id: string
         }
         Update: {
@@ -63,8 +71,12 @@ export type Database = {
           name?: string
           status?: 'pending' | 'running' | 'paused' | 'finished'
           bounty_amount?: number
+          entry_fee?: number
           current_level?: number
           level_started_at?: string | null
+          started_at?: string | null
+          finished_at?: string | null
+          prize_distribution?: Json
           blind_structure_id?: string
         }
         Relationships: [
@@ -84,7 +96,7 @@ export type Database = {
           tournament_id: string
           player_id: string
           seat_number: number | null
-          status: 'active' | 'eliminated' | 'rebought'
+          status: 'active' | 'eliminated' | 'winner'
           current_bounty: number
           guaranteed_bounty: number
           rebuy_count: number
@@ -97,7 +109,7 @@ export type Database = {
           tournament_id: string
           player_id: string
           seat_number?: number | null
-          status?: 'active' | 'eliminated' | 'rebought'
+          status?: 'active' | 'eliminated' | 'winner'
           current_bounty: number
           guaranteed_bounty?: number
           rebuy_count?: number
@@ -110,7 +122,7 @@ export type Database = {
           tournament_id?: string
           player_id?: string
           seat_number?: number | null
-          status?: 'active' | 'eliminated' | 'rebought'
+          status?: 'active' | 'eliminated' | 'winner'
           current_bounty?: number
           guaranteed_bounty?: number
           rebuy_count?: number
@@ -242,7 +254,22 @@ export type Database = {
           p_tournament_id: string
           p_killer_id: string
           p_victim_id: string
-          p_actor_id: string
+          p_actor_id: string | null
+        }
+        Returns: Json
+      }
+      process_rebuy: {
+        Args: {
+          p_tournament_id: string
+          p_player_id: string
+          p_actor_id: string | null
+        }
+        Returns: Json
+      }
+      process_end_tournament: {
+        Args: {
+          p_tournament_id: string
+          p_actor_id: string | null
         }
         Returns: Json
       }

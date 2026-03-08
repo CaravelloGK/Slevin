@@ -17,7 +17,12 @@ interface TournamentListProps {
 interface TournamentFormState {
   name: string
   bounty_amount: string
+  entry_fee: string
   blind_structure_id: string
+}
+
+interface PrizePlaceForm {
+  percentage: string
 }
 
 const STATUS_LABELS: Record<Tournament['status'], string> = {
@@ -34,15 +39,41 @@ const STATUS_VARIANT: Record<Tournament['status'], 'default' | 'secondary' | 'de
   finished: 'secondary',
 }
 
+const ORDINALS = ['1-е', '2-е', '3-е', '4-е', '5-е', '6-е', '7-е', '8-е']
+
 export function TournamentList({ tournaments, structures }: TournamentListProps) {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<TournamentFormState>({
     name: '',
     bounty_amount: '20',
+    entry_fee: '4000',
     blind_structure_id: structures[0]?.id ?? '',
   })
+  const [prizePlaces, setPrizePlaces] = useState<PrizePlaceForm[]>([
+    { percentage: '65' },
+    { percentage: '25' },
+    { percentage: '10' },
+  ])
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  const totalPct = prizePlaces.reduce((s, p) => s + (parseInt(p.percentage, 10) || 0), 0)
+  const pctValid = totalPct === 100
+  const entryFeeNum = parseInt(form.entry_fee, 10) || 0
+
+  function updatePrizePlace(idx: number, val: string) {
+    setPrizePlaces((prev) => prev.map((p, i) => (i === idx ? { percentage: val } : p)))
+  }
+
+  function addPrizePlace() {
+    if (prizePlaces.length >= 8) return
+    setPrizePlaces((prev) => [...prev, { percentage: '0' }])
+  }
+
+  function removePrizePlace() {
+    if (prizePlaces.length <= 1) return
+    setPrizePlaces((prev) => prev.slice(0, -1))
+  }
 
   function handleSubmit() {
     setError(null)
@@ -51,15 +82,31 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
       setError('Баунти должно быть неотрицательным числом')
       return
     }
+    const entryFee = parseInt(form.entry_fee, 10)
+    if (isNaN(entryFee) || entryFee < 0) {
+      setError('Взнос должен быть неотрицательным числом')
+      return
+    }
     if (!form.blind_structure_id) {
       setError('Выберите структуру блайндов')
       return
     }
+    if (prizePlaces.length > 0 && !pctValid) {
+      setError('Сумма процентов призового фонда должна равняться 100%')
+      return
+    }
+
+    const prize_distribution = prizePlaces.map((p, i) => ({
+      position: i + 1,
+      percentage: parseInt(p.percentage, 10) || 0,
+    }))
 
     startTransition(async () => {
       const result = await createTournament({
         name: form.name,
         bounty_amount: bounty,
+        entry_fee: entryFee,
+        prize_distribution,
         blind_structure_id: form.blind_structure_id,
       })
 
@@ -68,7 +115,8 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
         return
       }
       setOpen(false)
-      setForm({ name: '', bounty_amount: '20', blind_structure_id: structures[0]?.id ?? '' })
+      setForm({ name: '', bounty_amount: '20', entry_fee: '4000', blind_structure_id: structures[0]?.id ?? '' })
+      setPrizePlaces([{ percentage: '65' }, { percentage: '25' }, { percentage: '10' }])
     })
   }
 
@@ -103,7 +151,7 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
             {tournaments.map((t) => (
               <tr key={t.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="px-4 py-3 font-medium">{t.name}</td>
-                <td className="px-4 py-3">${t.bounty_amount}</td>
+                <td className="px-4 py-3">₽{t.bounty_amount}</td>
                 <td className="px-4 py-3">
                   <Badge variant={STATUS_VARIANT[t.status]}>{STATUS_LABELS[t.status]}</Badge>
                 </td>
@@ -121,6 +169,11 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
                       <a href={`/tournament/${t.id}/dealer`}>Панель дилера</a>
                     </Button>
                   )}
+                  {t.status === 'finished' && (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/tournament/${t.id}/report`}>Статистика</a>
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -129,12 +182,13 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Новый турнир</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
+            {/* Basic fields */}
             <div className="space-y-1.5">
               <Label htmlFor="t-name">Название</Label>
               <Input
@@ -146,13 +200,24 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="bounty">Сумма баунти ($)</Label>
+              <Label htmlFor="bounty">Сумма баунти (₽)</Label>
               <Input
                 id="bounty"
                 type="number"
                 min={0}
                 value={form.bounty_amount}
                 onChange={(e) => setForm((f) => ({ ...f, bounty_amount: e.target.value }))}
+                disabled={isPending}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="entry-fee">Взнос за участие (₽)</Label>
+              <Input
+                id="entry-fee"
+                type="number"
+                min={0}
+                value={form.entry_fee}
+                onChange={(e) => setForm((f) => ({ ...f, entry_fee: e.target.value }))}
                 disabled={isPending}
               />
             </div>
@@ -171,6 +236,76 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Prize distribution */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Призовые места (%)</Label>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={removePrizePlace}
+                    disabled={prizePlaces.length <= 1 || isPending}
+                    className="w-6 h-6 rounded text-xs font-bold border border-border hover:bg-muted disabled:opacity-30"
+                  >
+                    −
+                  </button>
+                  <button
+                    type="button"
+                    onClick={addPrizePlace}
+                    disabled={prizePlaces.length >= 8 || isPending}
+                    className="w-6 h-6 rounded text-xs font-bold border border-border hover:bg-muted disabled:opacity-30"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-md border border-border bg-muted/20 p-3 space-y-2">
+                {prizePlaces.map((place, idx) => {
+                  const pct = parseInt(place.percentage, 10) || 0
+                  const amount = entryFeeNum > 0 ? Math.round(entryFeeNum * pct / 100) : null
+                  return (
+                    <div key={idx} className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground w-12 shrink-0">
+                        {ORDINALS[idx] ?? `${idx + 1}-е`} место
+                      </span>
+                      <div className="flex items-center gap-1 flex-1">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={place.percentage}
+                          onChange={(e) => updatePrizePlace(idx, e.target.value)}
+                          disabled={isPending}
+                          className="h-7 text-sm w-20"
+                        />
+                        <span className="text-sm text-muted-foreground">%</span>
+                      </div>
+                      {amount !== null && amount > 0 && (
+                        <span className="text-sm font-medium tabular-nums">
+                          ₽{amount.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+
+                {/* Total */}
+                <div className="pt-1 border-t border-border flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Итого</span>
+                  <span
+                    className="text-sm font-bold"
+                    style={{ color: pctValid ? 'var(--color-green-600, #16a34a)' : totalPct > 100 ? 'var(--color-red-600, #dc2626)' : undefined }}
+                  >
+                    {totalPct}%{pctValid ? ' ✓' : totalPct > 100 ? ' — превышает 100%' : ''}
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Суммарный процент должен быть равен 100%. Призы рассчитываются от призового фонда.
+              </p>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}

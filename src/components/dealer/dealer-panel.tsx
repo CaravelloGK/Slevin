@@ -5,12 +5,13 @@ import { toast } from 'sonner'
 import { useBlindTimer } from '@/hooks/use-blind-timer'
 import { useTournamentRealtime } from '@/hooks/use-tournament-realtime'
 import { useOfflineQueue } from '@/hooks/use-offline-queue'
-import { recordKnockout, recordRebuy, pauseTimer, resumeTimer, advanceLevel } from '@/lib/actions/tournament'
+import { recordKnockout, recordRebuy, pauseTimer, resumeTimer, advanceLevel, endTournament } from '@/lib/actions/tournament'
 import { HeaderStrip } from './header-strip'
 import { ActionBar } from './action-bar'
 import { PlayerCard } from './player-card'
 import { KnockoutDialog } from './knockout-dialog'
 import { RebuyDialog } from './rebuy-dialog'
+import { EndTournamentDialog } from './end-tournament-dialog'
 import type { BlindLevel, Tournament, TournamentPlayerWithProfile } from '@/types/tournament'
 
 interface DealerPanelProps {
@@ -30,6 +31,7 @@ export function DealerPanel({
 
   const [knockoutVictim, setKnockoutVictim] = useState<TournamentPlayerWithProfile | null>(null)
   const [rebuyPlayer, setRebuyPlayer] = useState<TournamentPlayerWithProfile | null>(null)
+  const [endConfirmOpen, setEndConfirmOpen] = useState(false)
 
   const { pendingCount, isOnline, enqueue } = useOfflineQueue()
 
@@ -98,6 +100,14 @@ export function DealerPanel({
     await advanceLevel({ tournament_id: tournament.id, direction: 'next' })
   }, [tournament.id])
 
+  const handleEndTournament = useCallback(async () => {
+    const result = await endTournament({ tournament_id: tournament.id })
+    if (!result.success) {
+      toast.error(`Ошибка завершения: ${result.error}`)
+    }
+    setEndConfirmOpen(false)
+  }, [tournament.id])
+
   // ---- Hooks ------------------------------------------------------------------
 
   const currentLevel = blindLevels.find((l) => l.level_number === tournament.current_level)
@@ -115,7 +125,9 @@ export function DealerPanel({
     onConnectionChange: setRealtimeConnected,
   })
 
-  const activePlayers = players.filter((p) => p.status !== 'eliminated').length
+  const activePlayers = players.filter(
+    (p) => p.status === 'active',
+  ).length
 
   // ---- Render -----------------------------------------------------------------
 
@@ -144,7 +156,35 @@ export function DealerPanel({
         connected={realtimeConnected}
         pendingCount={pendingCount}
         isOnline={isOnline}
+        players={players}
       />
+
+      {/* Finished banner */}
+      {tournament.status === 'finished' && (
+        <div
+          className="px-5 py-3 flex items-center justify-between shrink-0"
+          style={{ background: '#1a1a0a', borderBottom: '1px solid #3d2e00' }}
+        >
+          <span
+            className="text-sm font-bold tracking-[0.1em] text-[#d4af37] uppercase"
+            style={{ fontFamily: 'var(--font-barlow)' }}
+          >
+            Турнир завершён
+          </span>
+          <a
+            href={`/tournament/${tournament.id}/report`}
+            className="px-4 py-1.5 rounded text-xs font-bold tracking-widest uppercase transition-all duration-150"
+            style={{
+              background: '#3d2e00',
+              color: '#d4af37',
+              border: '1px solid #d4af37',
+              fontFamily: 'var(--font-barlow)',
+            }}
+          >
+            Статистика →
+          </a>
+        </div>
+      )}
 
       {/* Player grid */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -159,6 +199,8 @@ export function DealerPanel({
             <PlayerCard
               key={entry.id}
               entry={entry}
+              entryFee={tournament.entry_fee}
+              tournamentFinished={tournament.status === 'finished'}
               onKnockout={setKnockoutVictim}
               onRebuy={setRebuyPlayer}
             />
@@ -177,6 +219,7 @@ export function DealerPanel({
         onResume={handleResume}
         onPrevLevel={handlePrevLevel}
         onNextLevel={handleNextLevel}
+        onEndTournament={() => setEndConfirmOpen(true)}
       />
 
       {/* Modals */}
@@ -185,6 +228,7 @@ export function DealerPanel({
           victim={knockoutVictim}
           allPlayers={players}
           bountyAmount={tournament.bounty_amount}
+          entryFee={tournament.entry_fee}
           onConfirm={handleKnockout}
           onCancel={() => setKnockoutVictim(null)}
         />
@@ -196,6 +240,13 @@ export function DealerPanel({
           bountyAmount={tournament.bounty_amount}
           onConfirm={handleRebuy}
           onCancel={() => setRebuyPlayer(null)}
+        />
+      )}
+
+      {endConfirmOpen && (
+        <EndTournamentDialog
+          onConfirm={handleEndTournament}
+          onCancel={() => setEndConfirmOpen(false)}
         />
       )}
     </div>

@@ -2,7 +2,7 @@
 
 import { BlindTimerDisplay } from './blind-timer-display'
 import { ConnectionBadge } from './connection-badge'
-import type { BlindLevel, Tournament } from '@/types/tournament'
+import type { BlindLevel, Tournament, TournamentPlayerWithProfile } from '@/types/tournament'
 
 interface HeaderStripProps {
   tournament: Tournament
@@ -11,6 +11,7 @@ interface HeaderStripProps {
   connected: boolean
   pendingCount: number
   isOnline: boolean
+  players: TournamentPlayerWithProfile[]
 }
 
 export function HeaderStrip({
@@ -20,7 +21,11 @@ export function HeaderStrip({
   connected,
   pendingCount,
   isOnline,
+  players,
 }: HeaderStripProps) {
+  const totalReentries = players.reduce((sum, p) => sum + p.rebuy_count, 0)
+  const prizePool = tournament.entry_fee * (players.length + totalReentries)
+
   return (
     <header
       className="flex items-center justify-between px-5 shrink-0"
@@ -63,6 +68,22 @@ export function HeaderStrip({
 
       {/* Status right */}
       <div className="flex items-center gap-4 shrink-0">
+        {tournament.entry_fee > 0 && (
+          <div className="flex flex-col items-end leading-none">
+            <span
+              className="text-[9px] tracking-[0.2em] text-[#484f58] uppercase"
+              style={{ fontFamily: 'var(--font-barlow)' }}
+            >
+              Призовой фонд
+            </span>
+            <span
+              className="text-sm font-bold text-[#d4af37]"
+              style={{ fontFamily: 'var(--font-space-mono)' }}
+            >
+              ₽{prizePool.toLocaleString()}
+            </span>
+          </div>
+        )}
         <div className="flex flex-col items-end leading-none">
           <span
             className="text-[9px] tracking-[0.2em] text-[#484f58] uppercase"

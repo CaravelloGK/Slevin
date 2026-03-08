@@ -81,9 +81,16 @@ export async function updatePlayer(
 
 // ---- Tournament actions -----------------------------------------------------
 
+const prizePlaceSchema = z.object({
+  position: z.number().int().min(1),
+  percentage: z.number().int().min(1).max(100),
+})
+
 const createTournamentSchema = z.object({
   name: z.string().min(1).max(200),
   bounty_amount: z.number().int().min(0),
+  entry_fee: z.number().int().min(0).default(0),
+  prize_distribution: z.array(prizePlaceSchema).default([]),
   blind_structure_id: z.string().uuid(),
 })
 
@@ -101,6 +108,8 @@ export async function createTournament(
     .insert({
       name: parsed.data.name,
       bounty_amount: parsed.data.bounty_amount,
+      entry_fee: parsed.data.entry_fee,
+      prize_distribution: parsed.data.prize_distribution,
       blind_structure_id: parsed.data.blind_structure_id,
       status: 'pending',
       current_level: 1,
@@ -306,9 +315,10 @@ export async function startTournament(
 
   if (tournament?.status !== 'pending') return { success: false, error: 'Tournament cannot be started' }
 
+  const now = new Date().toISOString()
   const { error } = await supabase
     .from('tournaments')
-    .update({ status: 'running', level_started_at: new Date().toISOString() })
+    .update({ status: 'running', level_started_at: now, started_at: now })
     .eq('id', parsed.data.tournament_id)
 
   if (error) return { success: false, error: 'Failed to start tournament' }

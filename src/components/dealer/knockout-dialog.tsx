@@ -8,6 +8,7 @@ interface KnockoutDialogProps {
   victim: TournamentPlayerWithProfile
   allPlayers: TournamentPlayerWithProfile[]
   bountyAmount: number
+  entryFee: number
   onConfirm: (killerId: string, victimId: string) => Promise<void>
   onCancel: () => void
 }
@@ -16,6 +17,7 @@ export function KnockoutDialog({
   victim,
   allPlayers,
   bountyAmount,
+  entryFee,
   onConfirm,
   onCancel,
 }: KnockoutDialogProps) {
@@ -89,6 +91,7 @@ export function KnockoutDialog({
                 <div key={killer.id} style={{ height: 120 }}>
                   <PlayerCard
                     entry={killer}
+                    entryFee={entryFee}
                     onKnockout={() => {}}
                     onRebuy={() => {}}
                     isSelectingKiller
@@ -159,13 +162,13 @@ export function KnockoutDialog({
                   className="text-3xl font-bold text-[#d4af37]"
                   style={{ fontFamily: 'var(--font-space-mono)' }}
                 >
-                  +◈{bountyTransfer.toLocaleString()}
+                  +₽{bountyTransfer.toLocaleString()}
                 </div>
                 <div
                   className="text-[11px] text-[#8b949e] mt-1"
                   style={{ fontFamily: 'var(--font-barlow)' }}
                 >
-                  50% от ◈{victim.current_bounty.toLocaleString()} → {(selectedKiller.player.nickname ?? selectedKiller.player.name).toUpperCase()}
+                  50% от ₽{victim.current_bounty.toLocaleString()} → {(selectedKiller.player.nickname ?? selectedKiller.player.name).toUpperCase()}
                 </div>
               </div>
             </div>

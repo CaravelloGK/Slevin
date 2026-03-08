@@ -27,3 +27,8 @@ export interface TournamentWithStructure extends Tournament {
 }
 
 export type UserRole = 'admin' | 'dealer' | 'player'
+
+export interface PrizePlace {
+  position: number
+  percentage: number
+}

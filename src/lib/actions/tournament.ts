@@ -36,6 +36,10 @@ const advanceLevelSchema = z.object({
   direction: z.enum(['next', 'prev']),
 })
 
+const endTournamentSchema = z.object({
+  tournament_id: z.string().uuid(),
+})
+
 // ---- Helpers ----------------------------------------------------------------
 
 async function getAuthorizedUser() {
@@ -75,6 +79,20 @@ export async function recordKnockout(
 
   if (error) {
     return { success: false, error: error.message, code: 'DB_ERROR' }
+  }
+
+  // Auto-end when exactly 1 active player remains
+  const { count } = await db
+    .from('tournament_players')
+    .select('id', { count: 'exact', head: true })
+    .eq('tournament_id', parsed.data.tournament_id)
+    .eq('status', 'active')
+
+  if (count === 1) {
+    await db.rpc('process_end_tournament', {
+      p_tournament_id: parsed.data.tournament_id,
+      p_actor_id: null,
+    })
   }
 
   return { success: true, data: { message: 'ok' } }
@@ -251,4 +269,36 @@ export async function advanceLevel(
   })
 
   return { success: true, data: { new_level: newLevel } }
+}
+
+export async function endTournament(
+  input: z.infer<typeof endTournamentSchema>,
+): Promise<ApiResponse<{ message: string }>> {
+  const parsed = endTournamentSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: 'Invalid input' }
+
+  const { user } = await getAuthorizedUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  const db = createServiceClient()
+
+  // Verify tournament is in a finishable state
+  const { data: tournament, error: fetchError } = await db
+    .from('tournaments')
+    .select('status')
+    .eq('id', parsed.data.tournament_id)
+    .single()
+
+  if (fetchError || !tournament) return { success: false, error: 'Tournament not found' }
+  if (tournament.status === 'finished') return { success: false, error: 'Tournament already finished' }
+  if (tournament.status === 'pending') return { success: false, error: 'Tournament has not started' }
+
+  const { error } = await db.rpc('process_end_tournament', {
+    p_tournament_id: parsed.data.tournament_id,
+    p_actor_id: null,
+  })
+
+  if (error) return { success: false, error: error.message, code: 'DB_ERROR' }
+
+  return { success: true, data: { message: 'ok' } }
 }

@@ -18,7 +18,7 @@ export default async function RegisterPlayersPage({ params }: Props) {
   ] = await Promise.all([
     supabase
       .from('tournaments')
-      .select('id, created_at, name, status, bounty_amount, current_level, level_started_at, blind_structure_id')
+      .select('id, created_at, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id')
       .eq('id', id)
       .single(),
     supabase
@@ -54,7 +54,7 @@ export default async function RegisterPlayersPage({ params }: Props) {
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Регистрация игроков</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Баунти за игрока: ${tournament.bounty_amount}
+          Баунти за игрока: ₽{tournament.bounty_amount}
         </p>
       </div>
       <PlayerRegistration

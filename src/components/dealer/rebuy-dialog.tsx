@@ -87,7 +87,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
                   className="text-2xl font-bold text-[#484f58]"
                   style={{ fontFamily: 'var(--font-space-mono)' }}
                 >
-                  ◈{player.current_bounty.toLocaleString()}
+                  ₽{player.current_bounty.toLocaleString()}
                 </div>
               </div>
 
@@ -109,7 +109,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
                   className="text-2xl font-bold text-[#d4af37]"
                   style={{ fontFamily: 'var(--font-space-mono)' }}
                 >
-                  ◈{newCurrentBounty.toLocaleString()}
+                  ₽{newCurrentBounty.toLocaleString()}
                 </div>
               </div>
             </div>
@@ -118,7 +118,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
               className="text-[11px] text-[#8b949e] mt-3"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              Зафиксировано ★{player.guaranteed_bounty.toLocaleString()} — без изменений
+              Зафиксировано ₽{player.guaranteed_bounty.toLocaleString()} — без изменений
             </div>
           </div>
 

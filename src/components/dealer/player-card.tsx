@@ -4,6 +4,8 @@ import type { TournamentPlayerWithProfile } from '@/types/tournament'
 
 interface PlayerCardProps {
   entry: TournamentPlayerWithProfile
+  entryFee: number
+  tournamentFinished?: boolean
   onKnockout: (victim: TournamentPlayerWithProfile) => void
   onRebuy: (player: TournamentPlayerWithProfile) => void
   isSelectingKiller?: boolean
@@ -12,12 +14,15 @@ interface PlayerCardProps {
 
 export function PlayerCard({
   entry,
+  entryFee,
+  tournamentFinished = false,
   onKnockout,
   onRebuy,
   isSelectingKiller,
   onSelectAsKiller,
 }: PlayerCardProps) {
   const isEliminated = entry.status === 'eliminated'
+  const isWinner = entry.status === 'winner'
   const isActive = entry.status === 'active'
 
   const displayName = entry.player.nickname ?? entry.player.name
@@ -52,7 +57,7 @@ export function PlayerCard({
             className="text-lg font-bold text-[#d4af37] mt-1"
             style={{ fontFamily: 'var(--font-space-mono)' }}
           >
-            ◈ {entry.current_bounty.toLocaleString()}
+            ₽{entry.current_bounty.toLocaleString()}
           </div>
         </div>
       </button>
@@ -75,8 +80,8 @@ export function PlayerCard({
         style={{
           background: isEliminated
             ? '#3d1f1f'
-            : entry.status === 'rebought'
-              ? '#3d2a00'
+            : isWinner
+              ? '#d4af37'
               : '#1a4731',
         }}
       />
@@ -91,6 +96,18 @@ export function PlayerCard({
         </span>
 
         <div className="flex items-center gap-1.5">
+          {isWinner && (
+            <span
+              className="text-[10px] font-bold tracking-widest px-1.5 py-0.5 rounded"
+              style={{
+                background: '#3d2e00',
+                color: '#d4af37',
+                fontFamily: 'var(--font-barlow)',
+              }}
+            >
+              ПОБЕДИТЕЛЬ
+            </span>
+          )}
           {isEliminated && (
             <span
               className="text-[10px] font-bold tracking-widest px-1.5 py-0.5 rounded"
@@ -108,7 +125,10 @@ export function PlayerCard({
               className="text-[10px] font-semibold tracking-wider text-[#8b949e]"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              R×{entry.rebuy_count}
+              R×{entry.rebuy_count}{' '}
+              <span style={{ color: '#6e7681' }}>
+                ({(entryFee * (entry.rebuy_count + 1)).toLocaleString()}₽)
+              </span>
             </span>
           )}
         </div>
@@ -153,10 +173,10 @@ export function PlayerCard({
             className="text-xl font-bold leading-none"
             style={{
               fontFamily: 'var(--font-space-mono)',
-              color: isEliminated ? '#484f58' : '#d4af37',
+              color: isEliminated || isWinner ? '#484f58' : '#d4af37',
             }}
           >
-            ◈{entry.current_bounty.toLocaleString()}
+            ₽{entry.current_bounty.toLocaleString()}
           </span>
         </div>
         <div className="flex flex-col items-end">
@@ -173,14 +193,14 @@ export function PlayerCard({
               color: entry.guaranteed_bounty > 0 ? '#9b7e1f' : '#30363d',
             }}
           >
-            ★{entry.guaranteed_bounty.toLocaleString()}
+            ₽{entry.guaranteed_bounty.toLocaleString()}
           </span>
         </div>
       </div>
 
       {/* Action buttons */}
       <div className="px-3 pb-3 flex gap-2">
-        {isActive && (
+        {isActive && !isWinner && !tournamentFinished && (
           <button
             onClick={() => onKnockout(entry)}
             className="flex-1 py-2 rounded text-center text-[12px] font-bold tracking-widest uppercase transition-all duration-150 active:scale-95"
@@ -194,7 +214,7 @@ export function PlayerCard({
             Выбить
           </button>
         )}
-        {isEliminated && (
+        {isEliminated && !tournamentFinished && (
           <button
             onClick={() => onRebuy(entry)}
             className="flex-1 py-2 rounded text-center text-[12px] font-bold tracking-widest uppercase transition-all duration-150 active:scale-95"
@@ -207,22 +227,6 @@ export function PlayerCard({
           >
             Ребай
           </button>
-        )}
-        {entry.status === 'rebought' && (
-          <>
-            <button
-              onClick={() => onKnockout(entry)}
-              className="flex-1 py-2 rounded text-center text-[12px] font-bold tracking-widest uppercase transition-all duration-150 active:scale-95"
-              style={{
-                background: '#1a0a0a',
-                color: '#da3633',
-                border: '1px solid #3d1f1f',
-                fontFamily: 'var(--font-barlow)',
-              }}
-            >
-              Выбить
-            </button>
-          </>
         )}
       </div>
     </div>

@@ -25,6 +25,7 @@ export function useBlindTimer(
   const { onAutoAdvance } = options
 
   const isPaused = tournament.status === 'paused'
+  const isFinished = tournament.status === 'finished'
   const duration = (currentLevel?.duration_minutes ?? 0) * 60
 
   // Reset the auto-advance guard whenever the level changes
@@ -35,7 +36,7 @@ export function useBlindTimer(
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current)
 
-    if (!currentLevel || !tournament.level_started_at || isPaused) {
+    if (!currentLevel || !tournament.level_started_at || isPaused || isFinished) {
       return
     }
 
@@ -58,7 +59,7 @@ export function useBlindTimer(
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [tournament.level_started_at, tournament.status, tournament.current_level, currentLevel, isPaused, onAutoAdvance])
+  }, [tournament.level_started_at, tournament.status, tournament.current_level, currentLevel, isPaused, isFinished, onAutoAdvance])
 
   const progressPct = duration > 0 ? Math.round(((duration - secondsLeft) / duration) * 100) : 0
 
