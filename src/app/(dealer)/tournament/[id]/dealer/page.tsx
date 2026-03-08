@@ -27,9 +27,9 @@ export default async function DealerPanelPage({ params }: Props) {
   // Fetch blind levels for this tournament's structure
   const { data: blindLevels } = await supabase
     .from('blind_levels')
-    .select('id, created_at, structure_id, level, small_blind, big_blind, ante, duration_seconds')
-    .eq('structure_id', tournament.blind_structure_id)
-    .order('level', { ascending: true })
+    .select('id, blind_structure_id, level_number, small_blind, big_blind, ante, duration_minutes, is_break')
+    .eq('blind_structure_id', tournament.blind_structure_id)
+    .order('level_number', { ascending: true })
     .limit(50)
 
   // Fetch tournament players with player profile

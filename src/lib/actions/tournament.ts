@@ -148,13 +148,13 @@ export async function resumeTimer(
     if (tournament) {
       const { data: level } = await supabase
         .from('blind_levels')
-        .select('duration_seconds')
-        .eq('structure_id', tournament.blind_structure_id)
-        .eq('level', tournament.current_level)
+        .select('duration_minutes')
+        .eq('blind_structure_id', tournament.blind_structure_id)
+        .eq('level_number', tournament.current_level)
         .single()
 
       if (level) {
-        const elapsed = level.duration_seconds - parsed.data.seconds_remaining
+        const elapsed = level.duration_minutes * 60 - parsed.data.seconds_remaining
         const effectiveStart = new Date(Date.now() - elapsed * 1000)
         levelStartedAt = effectiveStart.toISOString()
       }

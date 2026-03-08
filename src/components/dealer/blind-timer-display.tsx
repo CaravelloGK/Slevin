@@ -23,7 +23,7 @@ export function BlindTimerDisplay({ tournament, currentLevel, nextLevel }: Blind
           className="text-[10px] font-semibold tracking-[0.2em] text-[#8b949e] uppercase"
           style={{ fontFamily: 'var(--font-barlow)' }}
         >
-          Level
+          Уровень
         </span>
         <span
           className="text-5xl leading-none text-[#e6edf3]"
@@ -42,7 +42,7 @@ export function BlindTimerDisplay({ tournament, currentLevel, nextLevel }: Blind
           className="text-[10px] font-semibold tracking-[0.2em] text-[#8b949e] uppercase"
           style={{ fontFamily: 'var(--font-barlow)' }}
         >
-          Blinds
+          Блайнды
         </span>
         <span
           className="text-xl font-bold text-[#e6edf3]"
@@ -57,7 +57,7 @@ export function BlindTimerDisplay({ tournament, currentLevel, nextLevel }: Blind
             className="text-[11px] text-[#8b949e]"
             style={{ fontFamily: 'var(--font-barlow)' }}
           >
-            Ante: {currentLevel.ante.toLocaleString()}
+            Анте: {currentLevel.ante.toLocaleString()}
           </span>
         )}
       </div>
@@ -71,7 +71,7 @@ export function BlindTimerDisplay({ tournament, currentLevel, nextLevel }: Blind
           className="text-[10px] font-semibold tracking-[0.2em] text-[#8b949e] uppercase"
           style={{ fontFamily: 'var(--font-barlow)' }}
         >
-          {isPaused ? 'Paused' : 'Time'}
+          {isPaused ? 'Пауза' : 'Время'}
         </span>
         <span
           className="text-5xl leading-none tabular-nums transition-colors duration-300"
@@ -101,7 +101,7 @@ export function BlindTimerDisplay({ tournament, currentLevel, nextLevel }: Blind
               className="text-[10px] font-semibold tracking-[0.2em] text-[#8b949e] uppercase"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              Next
+              Следующий
             </span>
             <span
               className="text-sm text-[#8b949e]"
@@ -114,7 +114,7 @@ export function BlindTimerDisplay({ tournament, currentLevel, nextLevel }: Blind
                 className="text-[11px] text-[#484f58]"
                 style={{ fontFamily: 'var(--font-barlow)' }}
               >
-                Ante: {nextLevel.ante.toLocaleString()}
+                Анте: {nextLevel.ante.toLocaleString()}
               </span>
             )}
           </div>

@@ -44,7 +44,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
               className="text-[10px] tracking-[0.25em] text-[#d29922] uppercase font-semibold"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              Re-entry
+              Ребай
             </div>
             <div
               className="text-xl font-bold text-[#e6edf3]"
@@ -72,7 +72,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
               className="text-[10px] tracking-[0.2em] text-[#8b949e] uppercase mb-3"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              Rebuy #{player.rebuys + 1}
+              Ребай №{player.rebuys + 1}
             </div>
 
             <div className="flex items-center justify-center gap-4">
@@ -81,7 +81,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
                   className="text-[10px] text-[#8b949e] tracking-wider uppercase"
                   style={{ fontFamily: 'var(--font-barlow)' }}
                 >
-                  Current
+                  Сейчас
                 </div>
                 <div
                   className="text-2xl font-bold text-[#484f58]"
@@ -103,7 +103,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
                   className="text-[10px] text-[#d29922] tracking-wider uppercase"
                   style={{ fontFamily: 'var(--font-barlow)' }}
                 >
-                  After rebuy
+                  После ребая
                 </div>
                 <div
                   className="text-2xl font-bold text-[#d4af37]"
@@ -118,7 +118,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
               className="text-[11px] text-[#8b949e] mt-3"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              Guaranteed ★{player.guaranteed_bounty.toLocaleString()} — not affected
+              Зафиксировано ★{player.guaranteed_bounty.toLocaleString()} — без изменений
             </div>
           </div>
 
@@ -134,7 +134,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
                 fontFamily: 'var(--font-barlow)',
               }}
             >
-              Cancel
+              Отмена
             </button>
             <button
               onClick={handleConfirm}
@@ -146,7 +146,7 @@ export function RebuyDialog({ player, bountyAmount, onConfirm, onCancel }: Rebuy
                 fontFamily: 'var(--font-barlow)',
               }}
             >
-              {confirming ? 'Processing...' : 'CONFIRM REBUY'}
+              {confirming ? 'Обработка...' : 'ПОДТВЕРДИТЬ РЕБАЙ'}
             </button>
           </div>
         </div>

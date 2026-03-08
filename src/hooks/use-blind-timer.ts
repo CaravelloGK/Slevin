@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { BlindLevel, Tournament } from '@/types/tournament'
+import { computeSecondsLeft, shouldAutoAdvance } from './blind-timer-logic'
+
+interface UseBlindTimerOptions {
+  onAutoAdvance?: () => void
+}
 
 interface UseBlindTimerReturn {
   secondsLeft: number
@@ -12,26 +17,39 @@ interface UseBlindTimerReturn {
 export function useBlindTimer(
   tournament: Tournament,
   currentLevel: BlindLevel | undefined,
+  options: UseBlindTimerOptions = {},
 ): UseBlindTimerReturn {
   const [secondsLeft, setSecondsLeft] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const autoAdvanceFiredRef = useRef(false)
+  const { onAutoAdvance } = options
 
   const isPaused = tournament.status === 'paused'
-  const duration = currentLevel?.duration_seconds ?? 0
+  const duration = (currentLevel?.duration_minutes ?? 0) * 60
+
+  // Reset the auto-advance guard whenever the level changes
+  useEffect(() => {
+    autoAdvanceFiredRef.current = false
+  }, [tournament.current_level])
 
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current)
 
     if (!currentLevel || !tournament.level_started_at || isPaused) {
-      // When paused, keep showing current secondsLeft without decrementing
       return
     }
 
     const tick = () => {
-      const startedAt = new Date(tournament.level_started_at!).getTime()
-      const elapsed = Math.floor((Date.now() - startedAt) / 1000)
-      const remaining = Math.max(0, currentLevel.duration_seconds - elapsed)
+      const remaining = computeSecondsLeft(
+        tournament.level_started_at!,
+        currentLevel.duration_minutes * 60,
+      )
       setSecondsLeft(remaining)
+
+      if (shouldAutoAdvance(remaining, tournament.status) && !autoAdvanceFiredRef.current) {
+        autoAdvanceFiredRef.current = true
+        onAutoAdvance?.()
+      }
     }
 
     tick()
@@ -40,7 +58,7 @@ export function useBlindTimer(
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [tournament.level_started_at, tournament.status, currentLevel, isPaused])
+  }, [tournament.level_started_at, tournament.status, tournament.current_level, currentLevel, isPaused, onAutoAdvance])
 
   const progressPct = duration > 0 ? Math.round(((duration - secondsLeft) / duration) * 100) : 0
 

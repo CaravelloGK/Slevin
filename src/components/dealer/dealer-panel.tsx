@@ -32,22 +32,8 @@ export function DealerPanel({
 
   const { pendingCount, isOnline, enqueue } = useOfflineQueue()
 
-  const currentLevel = blindLevels.find((l) => l.level === tournament.current_level)
-  const nextLevel = blindLevels.find((l) => l.level === tournament.current_level + 1)
-
-  const { secondsLeft, isPaused } = useBlindTimer(tournament, currentLevel)
-
-  // Realtime subscription
-  useTournamentRealtime({
-    tournamentId: tournament.id,
-    onPlayersChange: setPlayers,
-    onTournamentChange: setTournament,
-    onConnectionChange: setRealtimeConnected,
-  })
-
-  const activePlayers = players.filter((p) => p.status !== 'eliminated').length
-
   // ---- Handlers ---------------------------------------------------------------
+  // Defined before useBlindTimer so handleNextLevel can be passed as onAutoAdvance.
 
   const handleKnockout = useCallback(
     async (killerId: string, victimId: string) => {
@@ -110,6 +96,25 @@ export function DealerPanel({
   const handleNextLevel = useCallback(async () => {
     await advanceLevel({ tournament_id: tournament.id, direction: 'next' })
   }, [tournament.id])
+
+  // ---- Hooks ------------------------------------------------------------------
+
+  const currentLevel = blindLevels.find((l) => l.level_number === tournament.current_level)
+  const nextLevel = blindLevels.find((l) => l.level_number === tournament.current_level + 1)
+
+  const { secondsLeft, isPaused } = useBlindTimer(tournament, currentLevel, {
+    onAutoAdvance: handleNextLevel,
+  })
+
+  // Realtime subscription
+  useTournamentRealtime({
+    tournamentId: tournament.id,
+    onPlayersChange: setPlayers,
+    onTournamentChange: setTournament,
+    onConnectionChange: setRealtimeConnected,
+  })
+
+  const activePlayers = players.filter((p) => p.status !== 'eliminated').length
 
   // ---- Render -----------------------------------------------------------------
 

@@ -19,7 +19,7 @@ export function ConnectionBadge({ connected, pendingCount, isOnline }: Connectio
               fontFamily: 'var(--font-space-mono)',
             }}
           >
-            {pendingCount} PENDING
+            {pendingCount} ОЖИД.
           </span>
         )}
         <div className="flex items-center gap-1.5">
@@ -28,7 +28,7 @@ export function ConnectionBadge({ connected, pendingCount, isOnline }: Connectio
             className="text-xs font-semibold tracking-widest text-[#d29922]"
             style={{ fontFamily: 'var(--font-barlow)' }}
           >
-            OFFLINE
+            ОФЛАЙН
           </span>
         </div>
       </div>
@@ -48,7 +48,7 @@ export function ConnectionBadge({ connected, pendingCount, isOnline }: Connectio
         }`}
         style={{ fontFamily: 'var(--font-barlow)' }}
       >
-        {connected ? 'LIVE' : 'CONNECTING'}
+        {connected ? 'В ЭФИРЕ' : 'ПОДКЛЮЧЕНИЕ'}
       </span>
     </div>
   )

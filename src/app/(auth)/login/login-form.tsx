@@ -15,7 +15,7 @@ export function LoginForm() {
   return (
     <form action={action} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">Эл. почта</Label>
         <Input
           id="email"
           name="email"
@@ -28,7 +28,7 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">Пароль</Label>
         <Input
           id="password"
           name="password"
@@ -45,7 +45,7 @@ export function LoginForm() {
       )}
 
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? 'Signing in...' : 'Sign in'}
+        {pending ? 'Вход...' : 'Войти'}
       </Button>
     </form>
   )

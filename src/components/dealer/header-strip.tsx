@@ -49,7 +49,7 @@ export function HeaderStrip({
             className="text-[9px] tracking-[0.3em] text-[#1a4731] uppercase"
             style={{ fontFamily: 'var(--font-barlow)' }}
           >
-            Tournament OS
+            Турнир OS
           </span>
         </div>
       </div>
@@ -68,7 +68,7 @@ export function HeaderStrip({
             className="text-[9px] tracking-[0.2em] text-[#484f58] uppercase"
             style={{ fontFamily: 'var(--font-barlow)' }}
           >
-            Tournament
+            Турнир
           </span>
           <span
             className="text-sm font-semibold text-[#8b949e] max-w-[140px] truncate"

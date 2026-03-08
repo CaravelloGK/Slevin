@@ -40,7 +40,7 @@ export function PlayerCard({
             className="text-[11px] tracking-widest text-[#8b949e] uppercase"
             style={{ fontFamily: 'var(--font-barlow)' }}
           >
-            Seat {entry.seat_number ?? '?'}
+            Место {entry.seat_number ?? '?'}
           </span>
           <span
             className="text-xl font-bold text-[#e6edf3] text-center leading-tight"
@@ -100,7 +100,7 @@ export function PlayerCard({
                 fontFamily: 'var(--font-barlow)',
               }}
             >
-              OUT
+              ВЫБЫЛ
             </span>
           )}
           {entry.rebuys > 0 && (
@@ -155,7 +155,7 @@ export function PlayerCard({
             className="text-[9px] tracking-[0.15em] text-[#484f58] uppercase"
             style={{ fontFamily: 'var(--font-barlow)' }}
           >
-            Bounty
+            Баунти
           </span>
           <span
             className="text-xl font-bold leading-none"
@@ -172,7 +172,7 @@ export function PlayerCard({
             className="text-[9px] tracking-[0.15em] text-[#484f58] uppercase"
             style={{ fontFamily: 'var(--font-barlow)' }}
           >
-            Locked
+            Зафикс.
           </span>
           <span
             className="text-sm leading-none"
@@ -199,7 +199,7 @@ export function PlayerCard({
               fontFamily: 'var(--font-barlow)',
             }}
           >
-            Eliminate
+            Выбить
           </button>
         )}
         {isEliminated && (
@@ -213,7 +213,7 @@ export function PlayerCard({
               fontFamily: 'var(--font-barlow)',
             }}
           >
-            Rebuy
+            Ребай
           </button>
         )}
         {entry.status === 'rebought' && (
@@ -228,7 +228,7 @@ export function PlayerCard({
                 fontFamily: 'var(--font-barlow)',
               }}
             >
-              Eliminate
+              Выбить
             </button>
           </>
         )}

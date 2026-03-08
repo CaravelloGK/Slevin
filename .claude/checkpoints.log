@@ -1,1 +1,4 @@
 2026-03-04-16:29 | phase1-schema-complete | no-git | Phase 1: Supabase schema migrations applied (4 migrations: enums, core tables, indexes+triggers, RLS)
+2026-03-07-18:49 | bounty-engine-complete | bd46408 | 49/49 tests passing
+2026-03-07-19:27 | phase-3-dealer-scaffold | 3848927
+2026-03-07-20:08 | phase-3-complete | d1804e2

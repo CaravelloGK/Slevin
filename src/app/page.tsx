@@ -25,7 +25,7 @@ export default async function HomePage() {
   return (
     <main className="p-8">
       <h1 className="text-2xl font-bold">Slevin</h1>
-      <p className="text-muted-foreground mt-2 text-sm">Welcome, {user.email}</p>
+      <p className="text-muted-foreground mt-2 text-sm">Добро пожаловать, {user.email}</p>
     </main>
   )
 }

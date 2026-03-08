@@ -46,7 +46,7 @@ export function ActionBar({
             fontFamily: 'var(--font-barlow)',
           }}
         >
-          {isPaused ? '▶ Resume' : '⏸ Pause'}
+          {isPaused ? '▶ Продолжить' : '⏸ Пауза'}
         </button>
 
         {/* Divider */}
@@ -64,7 +64,7 @@ export function ActionBar({
             fontFamily: 'var(--font-barlow)',
           }}
         >
-          ← Prev
+          ← Назад
         </button>
         <button
           onClick={onNextLevel}
@@ -76,7 +76,7 @@ export function ActionBar({
             fontFamily: 'var(--font-barlow)',
           }}
         >
-          Next →
+          Вперёд →
         </button>
       </div>
 
@@ -86,7 +86,7 @@ export function ActionBar({
           className="text-[10px] tracking-[0.2em] text-[#484f58] uppercase"
           style={{ fontFamily: 'var(--font-barlow)' }}
         >
-          Players
+          Игроки
         </span>
         <span
           className="text-lg font-bold text-[#e6edf3] tabular-nums"
@@ -105,7 +105,7 @@ export function ActionBar({
           color: isPaused ? '#d29922' : '#2ea043',
         }}
       >
-        {isPaused ? '⏸ Paused' : '● Running'}
+        {isPaused ? '⏸ Пауза' : '● Идёт'}
       </div>
     </footer>
   )

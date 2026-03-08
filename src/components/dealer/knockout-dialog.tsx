@@ -58,13 +58,13 @@ export function KnockoutDialog({
               className="text-[10px] tracking-[0.25em] text-[#da3633] uppercase font-semibold"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              Elimination
+              Выбывание
             </div>
             <div
               className="text-xl font-bold text-[#e6edf3]"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              {(victim.player.nickname ?? victim.player.name).toUpperCase()} — OUT
+              {(victim.player.nickname ?? victim.player.name).toUpperCase()} — ВЫБЫЛ
             </div>
           </div>
           <button
@@ -82,7 +82,7 @@ export function KnockoutDialog({
               className="text-xs tracking-[0.2em] text-[#8b949e] uppercase mb-4 font-semibold"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
-              Who eliminated {(victim.player.nickname ?? victim.player.name).toUpperCase()}?
+              Кто выбил {(victim.player.nickname ?? victim.player.name).toUpperCase()}?
             </p>
             <div className="grid grid-cols-3 gap-3" style={{ minHeight: 140 }}>
               {eligibleKillers.map((killer) => (
@@ -113,7 +113,7 @@ export function KnockoutDialog({
                     className="text-[10px] tracking-[0.2em] text-[#2ea043] uppercase"
                     style={{ fontFamily: 'var(--font-barlow)' }}
                   >
-                    Killer
+                    Победитель
                   </div>
                   <div
                     className="text-2xl font-bold text-[#e6edf3]"
@@ -133,7 +133,7 @@ export function KnockoutDialog({
                     className="text-[10px] tracking-[0.2em] text-[#da3633] uppercase"
                     style={{ fontFamily: 'var(--font-barlow)' }}
                   >
-                    Victim
+                    Жертва
                   </div>
                   <div
                     className="text-2xl font-bold text-[#8b949e] line-through"
@@ -153,7 +153,7 @@ export function KnockoutDialog({
                   className="text-[10px] tracking-[0.2em] text-[#8b949e] uppercase mb-1"
                   style={{ fontFamily: 'var(--font-barlow)' }}
                 >
-                  Bounty Transfer
+                  Передача баунти
                 </div>
                 <div
                   className="text-3xl font-bold text-[#d4af37]"
@@ -165,7 +165,7 @@ export function KnockoutDialog({
                   className="text-[11px] text-[#8b949e] mt-1"
                   style={{ fontFamily: 'var(--font-barlow)' }}
                 >
-                  50% of ◈{victim.current_bounty.toLocaleString()} → {(selectedKiller.player.nickname ?? selectedKiller.player.name).toUpperCase()}
+                  50% от ◈{victim.current_bounty.toLocaleString()} → {(selectedKiller.player.nickname ?? selectedKiller.player.name).toUpperCase()}
                 </div>
               </div>
             </div>
@@ -181,7 +181,7 @@ export function KnockoutDialog({
                   fontFamily: 'var(--font-barlow)',
                 }}
               >
-                Back
+                Назад
               </button>
               <button
                 onClick={handleConfirm}
@@ -193,7 +193,7 @@ export function KnockoutDialog({
                   fontFamily: 'var(--font-barlow)',
                 }}
               >
-                {confirming ? 'Processing...' : 'CONFIRM ELIMINATION'}
+                {confirming ? 'Обработка...' : 'ПОДТВЕРДИТЬ ВЫБЫВАНИЕ'}
               </button>
             </div>
           </div>

@@ -196,38 +196,38 @@ export type Database = {
       blind_levels: {
         Row: {
           id: string
-          created_at: string
-          structure_id: string
-          level: number
+          blind_structure_id: string
+          level_number: number
           small_blind: number
           big_blind: number
           ante: number
-          duration_seconds: number
+          duration_minutes: number
+          is_break: boolean
         }
         Insert: {
           id?: string
-          created_at?: string
-          structure_id: string
-          level: number
+          blind_structure_id: string
+          level_number: number
           small_blind: number
           big_blind: number
           ante?: number
-          duration_seconds: number
+          duration_minutes: number
+          is_break?: boolean
         }
         Update: {
           id?: string
-          created_at?: string
-          structure_id?: string
-          level?: number
+          blind_structure_id?: string
+          level_number?: number
           small_blind?: number
           big_blind?: number
           ante?: number
-          duration_seconds?: number
+          duration_minutes?: number
+          is_break?: boolean
         }
         Relationships: [
           {
-            foreignKeyName: 'blind_levels_structure_id_fkey'
-            columns: ['structure_id']
+            foreignKeyName: 'blind_levels_blind_structure_id_fkey'
+            columns: ['blind_structure_id']
             isOneToOne: false
             referencedRelation: 'blind_structures'
             referencedColumns: ['id']
