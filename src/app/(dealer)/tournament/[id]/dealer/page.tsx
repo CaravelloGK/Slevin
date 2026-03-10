@@ -15,7 +15,7 @@ export default async function DealerPanelPage({ params }: Props) {
   const { data: tournament, error: tournamentError } = await supabase
     .from('tournaments')
     .select(
-      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, created_at',
+      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, created_at, poster_url',
     )
     .eq('id', id)
     .single()

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { signOut } from '@/lib/actions/auth'
 
 interface AppHeaderProps {
   role?: string
@@ -31,6 +32,14 @@ export function AppHeader({ role }: AppHeaderProps) {
           {roleLabel(role)}
         </span>
       )}
+      <form action={signOut}>
+        <button
+          type="submit"
+          className="text-xs uppercase tracking-widest text-[#484f58] hover:text-[#e6edf3] transition-colors"
+        >
+          Выйти
+        </button>
+      </form>
     </header>
   )
 }

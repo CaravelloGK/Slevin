@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { LoginForm } from './login-form'
 
 export default function LoginPage() {
@@ -8,6 +9,12 @@ export default function LoginPage() {
         <p className="text-muted-foreground text-sm">Войдите в аккаунт</p>
       </div>
       <LoginForm />
+      <p className="text-center text-sm text-muted-foreground">
+        Нет аккаунта?{' '}
+        <Link href="/register" className="underline underline-offset-4 hover:text-foreground">
+          Зарегистрироваться
+        </Link>
+      </p>
     </main>
   )
 }

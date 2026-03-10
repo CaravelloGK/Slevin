@@ -6,7 +6,7 @@ export default async function PlayersPage() {
 
   const { data: players } = await supabase
     .from('players')
-    .select('id, created_at, name, nickname, avatar_url')
+    .select('id, created_at, name, nickname, avatar_url, user_id')
     .order('name', { ascending: true })
     .limit(500)
 

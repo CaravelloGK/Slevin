@@ -35,7 +35,7 @@ export default async function TournamentsPage() {
             {tournaments.map((t) => (
               <Link
                 key={t.id}
-                href={`/tournament/${t.id}/live`}
+                href={`/tournament/${t.id}`}
                 className="flex items-center justify-between p-4 rounded-lg border transition-all hover:border-[#388bfd] hover:bg-[#161b22]"
                 style={{ background: '#161b22', borderColor: '#30363d' }}
               >

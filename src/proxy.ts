@@ -32,8 +32,9 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Unauthenticated users can only access /login
-  if (!user && pathname !== '/login') {
+  // Unauthenticated users can only access /login and /register
+  const publicPaths = ['/login', '/register']
+  if (!user && !publicPaths.includes(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

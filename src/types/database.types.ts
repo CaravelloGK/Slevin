@@ -19,6 +19,7 @@ export type Database = {
           name: string
           nickname: string | null
           avatar_url: string | null
+          user_id: string | null
         }
         Insert: {
           id?: string
@@ -26,6 +27,7 @@ export type Database = {
           name: string
           nickname?: string | null
           avatar_url?: string | null
+          user_id?: string | null
         }
         Update: {
           id?: string
@@ -33,6 +35,7 @@ export type Database = {
           name?: string
           nickname?: string | null
           avatar_url?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -50,6 +53,7 @@ export type Database = {
           finished_at: string | null
           prize_distribution: Json
           blind_structure_id: string
+          poster_url: string | null
         }
         Insert: {
           id?: string
@@ -64,6 +68,7 @@ export type Database = {
           finished_at?: string | null
           prize_distribution?: Json
           blind_structure_id: string
+          poster_url?: string | null
         }
         Update: {
           id?: string
@@ -78,6 +83,7 @@ export type Database = {
           finished_at?: string | null
           prize_distribution?: Json
           blind_structure_id?: string
+          poster_url?: string | null
         }
         Relationships: [
           {
