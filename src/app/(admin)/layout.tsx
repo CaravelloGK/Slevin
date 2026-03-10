@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { AppHeader } from '@/components/app-header'
 
 export default async function AdminLayout({
   children,
@@ -15,5 +16,10 @@ export default async function AdminLayout({
     redirect('/')
   }
 
-  return <>{children}</>
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: '#0d1117' }}>
+      <AppHeader role="admin" />
+      <div className="flex-1">{children}</div>
+    </div>
+  )
 }

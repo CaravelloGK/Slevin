@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { BlindTimerDisplay } from './blind-timer-display'
 import { ConnectionBadge } from './connection-badge'
 import type { BlindLevel, Tournament, TournamentPlayerWithProfile } from '@/types/tournament'
@@ -35,17 +36,17 @@ export function HeaderStrip({
         borderBottom: '1px solid #30363d',
       }}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 shrink-0">
+      {/* Logo — tap to go home */}
+      <Link href="/" className="flex items-center gap-3 shrink-0 group" aria-label="Главное меню">
         <div
-          className="w-8 h-8 rounded flex items-center justify-center text-sm font-bold"
+          className="w-8 h-8 rounded flex items-center justify-center text-sm font-bold group-hover:opacity-75 transition-opacity"
           style={{ background: '#1a4731', color: '#d4af37', fontFamily: 'var(--font-bebas)' }}
         >
           S
         </div>
         <div className="flex flex-col leading-none">
           <span
-            className="text-lg font-bold text-[#e6edf3] tracking-[0.1em]"
+            className="text-lg font-bold text-[#e6edf3] tracking-[0.1em] group-hover:text-[#d4af37] transition-colors"
             style={{ fontFamily: 'var(--font-bebas)' }}
           >
             SLEVIN
@@ -57,7 +58,7 @@ export function HeaderStrip({
             Турнир OS
           </span>
         </div>
-      </div>
+      </Link>
 
       {/* Timer center */}
       <BlindTimerDisplay
