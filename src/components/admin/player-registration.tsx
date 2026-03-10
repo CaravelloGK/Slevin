@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { registerPlayer, removePlayerFromTournament, startTournament } from '@/lib/actions/admin'
+import { registerPlayer, removePlayerFromTournament, startTournament, setTournamentDealer } from '@/lib/actions/admin'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -26,15 +26,14 @@ export function PlayerRegistration({
   const registeredIds = new Set(registeredPlayers.map((rp) => rp.player_id))
   const unregistered = allPlayers.filter((p) => !registeredIds.has(p.id))
 
+  const dealerPlayerId = tournament.dealer_player_id ?? null
+
   function handleRegister(playerId: string) {
     setError(null)
     startTransition(async () => {
       const result = await registerPlayer({ tournament_id: tournament.id, player_id: playerId })
-      if (!result.success) {
-        setError(result.error)
-      } else {
-        router.refresh()
-      }
+      if (!result.success) setError(result.error)
+      else router.refresh()
     })
   }
 
@@ -45,11 +44,20 @@ export function PlayerRegistration({
         tournament_id: tournament.id,
         player_id: playerId,
       })
-      if (!result.success) {
-        setError(result.error)
-      } else {
-        router.refresh()
-      }
+      if (!result.success) setError(result.error)
+      else router.refresh()
+    })
+  }
+
+  function handleAssignDealer(playerId: string) {
+    setError(null)
+    startTransition(async () => {
+      const result = await setTournamentDealer({
+        tournament_id: tournament.id,
+        player_id: playerId,
+      })
+      if (!result.success) setError(result.error)
+      else router.refresh()
     })
   }
 
@@ -86,38 +94,76 @@ export function PlayerRegistration({
         {registeredPlayers.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4">Игроков пока нет.</p>
         ) : (
-          <div className="rounded-md border">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-2 text-left font-medium">Имя</th>
-                  <th className="px-4 py-2 text-left font-medium">Никнейм</th>
-                  <th className="px-4 py-2 text-left font-medium">Стартовый баунти</th>
-                  <th className="px-4 py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {registeredPlayers.map((rp) => (
-                  <tr key={rp.id} className="border-b last:border-0">
-                    <td className="px-4 py-2 font-medium">{rp.player.name}</td>
-                    <td className="px-4 py-2 text-muted-foreground">{rp.player.nickname ?? '-'}</td>
-                    <td className="px-4 py-2">₽{rp.current_bounty}</td>
-                    <td className="px-4 py-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        disabled={isPending}
-                        onClick={() => handleRemove(rp.player_id)}
-                      >
-                        Убрать
-                      </Button>
-                    </td>
+          <>
+            <div className="rounded-md border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-4 py-2 text-left font-medium">Имя</th>
+                    <th className="px-4 py-2 text-left font-medium">Никнейм</th>
+                    <th className="px-4 py-2 text-left font-medium">Роль</th>
+                    <th className="px-4 py-2 text-left font-medium">Баунти</th>
+                    <th className="px-4 py-2" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {registeredPlayers.map((rp) => {
+                    const isDealer = rp.player_id === dealerPlayerId
+                    const hasAccount = !!rp.player.user_id
+                    return (
+                      <tr key={rp.id} className="border-b last:border-0">
+                        <td className="px-4 py-2 font-medium">{rp.player.name}</td>
+                        <td className="px-4 py-2 text-muted-foreground">
+                          {rp.player.nickname ?? '-'}
+                        </td>
+                        <td className="px-4 py-2">
+                          {isDealer ? (
+                            <Badge variant="default">Дилер</Badge>
+                          ) : (
+                            <Badge variant="secondary">Игрок</Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-2">₽{rp.current_bounty}</td>
+                        <td className="px-4 py-2">
+                          <div className="flex items-center justify-end gap-2">
+                            {!isDealer && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={isPending || !hasAccount}
+                                title={
+                                  hasAccount
+                                    ? 'Назначить этого игрока дилером'
+                                    : 'Нет привязанного аккаунта'
+                                }
+                                onClick={() => handleAssignDealer(rp.player_id)}
+                              >
+                                Дилер
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                              disabled={isPending}
+                              onClick={() => handleRemove(rp.player_id)}
+                            >
+                              Убрать
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {!dealerPlayerId && registeredPlayers.length >= 2 && (
+              <p className="text-xs text-amber-600 mt-2">
+                Назначьте дилера — нажмите кнопку «Дилер» рядом с нужным игроком (требуется привязанный аккаунт).
+              </p>
+            )}
+          </>
         )}
       </section>
 
@@ -172,9 +218,11 @@ export function PlayerRegistration({
       {/* Start tournament */}
       <div className="flex items-center justify-between pt-4 border-t">
         <p className="text-sm text-muted-foreground">
-          {canStart
-            ? 'Турнир готов к запуску.'
-            : 'Зарегистрируйте минимум 2 игрока для старта.'}
+          {!canStart
+            ? 'Зарегистрируйте минимум 2 игрока для старта.'
+            : !dealerPlayerId
+              ? 'Готово к запуску. Дилер не назначен — панель будет доступна только администратору.'
+              : 'Турнир готов к запуску.'}
         </p>
         <Button size="lg" disabled={!canStart || isPending} onClick={handleStart}>
           {isPending ? 'Запуск...' : 'Начать турнир'}

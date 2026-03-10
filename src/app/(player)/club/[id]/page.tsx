@@ -315,6 +315,9 @@ export default async function ClubTournamentPage({ params }: Props) {
                   const isActive = p.status === 'active'
                   const spent = tournament.entry_fee * (p.rebuy_count + 1)
                   const pos = isWinner ? 1 : p.final_position
+                  const bountyEarned = isWinner
+                    ? p.current_bounty + p.guaranteed_bounty
+                    : p.guaranteed_bounty
                   return (
                     <tr
                       key={p.id}
@@ -364,11 +367,11 @@ export default async function ClubTournamentPage({ params }: Props) {
                       <td
                         className="px-4 py-3 text-right text-sm font-semibold"
                         style={{
-                          color: p.guaranteed_bounty > 0 ? '#d4af37' : '#484f58',
+                          color: bountyEarned > 0 ? '#d4af37' : '#484f58',
                           fontFamily: 'var(--font-space-mono)',
                         }}
                       >
-                        {p.guaranteed_bounty > 0 ? `₽${p.guaranteed_bounty.toLocaleString()}` : '—'}
+                        {bountyEarned > 0 ? `₽${bountyEarned.toLocaleString()}` : '—'}
                       </td>
                       {tournament.entry_fee > 0 && (
                         <td

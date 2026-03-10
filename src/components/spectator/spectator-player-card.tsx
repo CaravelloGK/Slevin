@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import type { TournamentPlayerWithProfile } from '@/types/tournament'
 
 interface SpectatorPlayerCardProps {
@@ -29,12 +30,57 @@ export function SpectatorPlayerCard({ entry, entryFee }: SpectatorPlayerCardProp
 
       {/* Header row */}
       <div className="flex items-center justify-between px-3 pt-2 pb-1">
-        <span
-          className="text-[11px] font-semibold tracking-[0.15em] text-[#8b949e] uppercase"
-          style={{ fontFamily: 'var(--font-barlow)' }}
-        >
-          Seat {entry.seat_number ?? '?'}
-        </span>
+        {/* Left: avatar + seat */}
+        <div className="flex items-center gap-2">
+          {entry.player.avatar_url ? (
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '1px solid #30363d',
+                flexShrink: 0,
+              }}
+            >
+              <Image
+                src={entry.player.avatar_url}
+                alt=""
+                width={28}
+                height={28}
+                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+              />
+            </div>
+          ) : (
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: '#21262d',
+                border: '1px solid #30363d',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                fontFamily: 'var(--font-barlow)',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#8b949e',
+              }}
+            >
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <span
+            className="text-[11px] font-semibold tracking-[0.15em] text-[#8b949e] uppercase"
+            style={{ fontFamily: 'var(--font-barlow)' }}
+          >
+            Seat {entry.seat_number ?? '?'}
+          </span>
+        </div>
+
+        {/* Right: badges */}
         <div className="flex items-center gap-1.5">
           {isWinner && (
             <span

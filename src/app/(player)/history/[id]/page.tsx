@@ -105,6 +105,9 @@ export default async function HistoryTournamentPage({ params }: Props) {
   const spent = tournament.entry_fee * (myEntry.rebuy_count + 1)
   const isWinner = myEntry.status === 'winner'
   const myPosition = isWinner ? 1 : myEntry.final_position
+  const bountyEarned = isWinner
+    ? myEntry.current_bounty + myEntry.guaranteed_bounty
+    : myEntry.guaranteed_bounty
 
   // Calculate prize won
   let prizeWon = 0
@@ -184,12 +187,8 @@ export default async function HistoryTournamentPage({ params }: Props) {
           )}
           <StatCard
             label="Баунти собрано"
-            value={
-              myEntry.guaranteed_bounty > 0
-                ? `₽${myEntry.guaranteed_bounty.toLocaleString()}`
-                : '—'
-            }
-            highlight={myEntry.guaranteed_bounty > 0}
+            value={bountyEarned > 0 ? `₽${bountyEarned.toLocaleString()}` : '—'}
+            highlight={bountyEarned > 0}
           />
           {prizeWon > 0 && (
             <StatCard

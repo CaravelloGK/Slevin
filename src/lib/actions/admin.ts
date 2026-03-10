@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { ApiResponse } from '@/types/api'
 
 // ---- Auth guard -------------------------------------------------------------
@@ -121,6 +122,98 @@ export async function createTournament(
 
   revalidatePath('/admin/tournaments')
   return { success: true, data: { id: data.id } }
+}
+
+// ---- Tournament poster ------------------------------------------------------
+
+const updateTournamentPosterSchema = z.object({
+  tournament_id: z.string().uuid(),
+  poster_url: z.string().url(),
+})
+
+export async function updateTournamentPoster(
+  input: z.infer<typeof updateTournamentPosterSchema>,
+): Promise<ApiResponse<null>> {
+  const parsed = updateTournamentPosterSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: 'Invalid input' }
+
+  const { supabase } = await requireAdmin()
+  if (!supabase) return { success: false, error: 'Unauthorized' }
+
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ poster_url: parsed.data.poster_url })
+    .eq('id', parsed.data.tournament_id)
+
+  if (error) return { success: false, error: 'Failed to update poster' }
+
+  revalidatePath('/admin/tournaments')
+  return { success: true, data: null }
+}
+
+// ---- Dealer assignment -------------------------------------------------------
+
+const setTournamentDealerSchema = z.object({
+  tournament_id: z.string().uuid(),
+  player_id: z.string().uuid(),
+})
+
+export async function setTournamentDealer(
+  input: z.infer<typeof setTournamentDealerSchema>,
+): Promise<ApiResponse<null>> {
+  const parsed = setTournamentDealerSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: 'Invalid input' }
+
+  const { supabase } = await requireAdmin()
+  if (!supabase) return { success: false, error: 'Unauthorized' }
+
+  const adminClient = createAdminClient()
+
+  // Get current dealer (if any) to revert their role
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('dealer_player_id')
+    .eq('id', parsed.data.tournament_id)
+    .single()
+
+  if (tournament?.dealer_player_id && tournament.dealer_player_id !== parsed.data.player_id) {
+    const { data: prevPlayer } = await supabase
+      .from('players')
+      .select('user_id')
+      .eq('id', tournament.dealer_player_id)
+      .single()
+    if (prevPlayer?.user_id) {
+      await adminClient.auth.admin.updateUserById(prevPlayer.user_id, {
+        user_metadata: { role: 'player' },
+      })
+    }
+  }
+
+  // Get the new dealer's user_id
+  const { data: newDealer } = await supabase
+    .from('players')
+    .select('user_id')
+    .eq('id', parsed.data.player_id)
+    .single()
+
+  if (!newDealer?.user_id) return { success: false, error: 'Этот игрок не привязан к аккаунту' }
+
+  // Elevate to dealer role
+  const { error: roleError } = await adminClient.auth.admin.updateUserById(newDealer.user_id, {
+    user_metadata: { role: 'dealer' },
+  })
+  if (roleError) return { success: false, error: 'Не удалось обновить роль' }
+
+  // Store dealer in tournament
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ dealer_player_id: parsed.data.player_id })
+    .eq('id', parsed.data.tournament_id)
+
+  if (error) return { success: false, error: 'Не удалось сохранить дилера' }
+
+  revalidatePath(`/admin/tournaments/${parsed.data.tournament_id}/register`)
+  return { success: true, data: null }
 }
 
 // ---- Blind structure actions ------------------------------------------------

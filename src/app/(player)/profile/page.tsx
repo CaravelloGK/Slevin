@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-header'
 import { ProfileForm } from './profile-form'
 import { AvatarUpload } from './avatar-upload'
+import { ChangePasswordForm } from './change-password-form'
 
 export default async function ProfilePage() {
   const supabase = await createServerClient()

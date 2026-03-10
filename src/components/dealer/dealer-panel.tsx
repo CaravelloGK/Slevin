@@ -12,6 +12,8 @@ import { PlayerCard } from './player-card'
 import { KnockoutDialog } from './knockout-dialog'
 import { RebuyDialog } from './rebuy-dialog'
 import { EndTournamentDialog } from './end-tournament-dialog'
+import { EditPlayerDialog } from './edit-player-dialog'
+import { LevelUpDialog } from './level-up-dialog'
 import type { BlindLevel, Tournament, TournamentPlayerWithProfile } from '@/types/tournament'
 
 interface DealerPanelProps {
@@ -23,20 +25,24 @@ interface DealerPanelProps {
 export function DealerPanel({
   initialTournament,
   initialPlayers,
-  blindLevels,
+  blindLevels: initialBlindLevels,
 }: DealerPanelProps) {
   const [tournament, setTournament] = useState<Tournament>(initialTournament)
   const [players, setPlayers] = useState<TournamentPlayerWithProfile[]>(initialPlayers)
   const [realtimeConnected, setRealtimeConnected] = useState(false)
 
+  // Blind levels can be overridden per-tournament by the dealer
+  const [localBlindLevels, setLocalBlindLevels] = useState<BlindLevel[]>(initialBlindLevels)
+
   const [knockoutVictim, setKnockoutVictim] = useState<TournamentPlayerWithProfile | null>(null)
   const [rebuyPlayer, setRebuyPlayer] = useState<TournamentPlayerWithProfile | null>(null)
   const [endConfirmOpen, setEndConfirmOpen] = useState(false)
+  const [editPlayer, setEditPlayer] = useState<TournamentPlayerWithProfile | null>(null)
+  const [levelUpPromptOpen, setLevelUpPromptOpen] = useState(false)
 
   const { pendingCount, isOnline, enqueue } = useOfflineQueue()
 
   // ---- Handlers ---------------------------------------------------------------
-  // Defined before useBlindTimer so handleNextLevel can be passed as onAutoAdvance.
 
   const handleKnockout = useCallback(
     async (killerId: string, victimId: string) => {
@@ -100,6 +106,11 @@ export function DealerPanel({
     await advanceLevel({ tournament_id: tournament.id, direction: 'next' })
   }, [tournament.id])
 
+  // Called by the timer hook when it hits 00:00 — shows a prompt instead of auto-advancing
+  const handleTimerExpired = useCallback(() => {
+    setLevelUpPromptOpen(true)
+  }, [])
+
   const handleEndTournament = useCallback(async () => {
     const result = await endTournament({ tournament_id: tournament.id })
     if (!result.success) {
@@ -110,11 +121,11 @@ export function DealerPanel({
 
   // ---- Hooks ------------------------------------------------------------------
 
-  const currentLevel = blindLevels.find((l) => l.level_number === tournament.current_level)
-  const nextLevel = blindLevels.find((l) => l.level_number === tournament.current_level + 1)
+  const currentLevel = localBlindLevels.find((l) => l.level_number === tournament.current_level)
+  const nextLevel = localBlindLevels.find((l) => l.level_number === tournament.current_level + 1)
 
   const { secondsLeft, isPaused } = useBlindTimer(tournament, currentLevel, {
-    onAutoAdvance: handleNextLevel,
+    onAutoAdvance: handleTimerExpired,
   })
 
   // Realtime subscription
@@ -125,9 +136,7 @@ export function DealerPanel({
     onConnectionChange: setRealtimeConnected,
   })
 
-  const activePlayers = players.filter(
-    (p) => p.status === 'active',
-  ).length
+  const activePlayers = players.filter((p) => p.status === 'active').length
 
   // ---- Render -----------------------------------------------------------------
 
@@ -172,7 +181,7 @@ export function DealerPanel({
             Турнир завершён
           </span>
           <a
-            href={`/tournament/${tournament.id}/report`}
+            href={`/club/${tournament.id}`}
             className="px-4 py-1.5 rounded text-xs font-bold tracking-widest uppercase transition-all duration-150"
             style={{
               background: '#3d2e00',
@@ -203,6 +212,7 @@ export function DealerPanel({
               tournamentFinished={tournament.status === 'finished'}
               onKnockout={setKnockoutVictim}
               onRebuy={setRebuyPlayer}
+              onEdit={setEditPlayer}
             />
           ))}
         </div>
@@ -247,6 +257,28 @@ export function DealerPanel({
         <EndTournamentDialog
           onConfirm={handleEndTournament}
           onCancel={() => setEndConfirmOpen(false)}
+        />
+      )}
+
+      {levelUpPromptOpen && (
+        <LevelUpDialog
+          currentLevel={tournament.current_level}
+          nextLevel={nextLevel}
+          onConfirm={async () => {
+            setLevelUpPromptOpen(false)
+            await handleNextLevel()
+          }}
+          onCancel={() => setLevelUpPromptOpen(false)}
+        />
+      )}
+
+      {editPlayer && (
+        <EditPlayerDialog
+          player={editPlayer}
+          tournament={tournament}
+          blindLevels={localBlindLevels}
+          onClose={() => setEditPlayer(null)}
+          onBlindLevelsChange={setLocalBlindLevels}
         />
       )}
     </div>

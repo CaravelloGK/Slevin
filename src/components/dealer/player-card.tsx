@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import type { TournamentPlayerWithProfile } from '@/types/tournament'
 
 interface PlayerCardProps {
@@ -8,6 +9,7 @@ interface PlayerCardProps {
   tournamentFinished?: boolean
   onKnockout: (victim: TournamentPlayerWithProfile) => void
   onRebuy: (player: TournamentPlayerWithProfile) => void
+  onEdit?: (player: TournamentPlayerWithProfile) => void
   isSelectingKiller?: boolean
   onSelectAsKiller?: (player: TournamentPlayerWithProfile) => void
 }
@@ -18,6 +20,7 @@ export function PlayerCard({
   tournamentFinished = false,
   onKnockout,
   onRebuy,
+  onEdit,
   isSelectingKiller,
   onSelectAsKiller,
 }: PlayerCardProps) {
@@ -70,7 +73,7 @@ export function PlayerCard({
       className="relative flex flex-col rounded-lg border overflow-hidden transition-all duration-200"
       style={{
         background: isEliminated ? '#0f1117' : '#161b22',
-        borderColor: isEliminated ? '#21262d' : isActive ? '#30363d' : '#30363d',
+        borderColor: isEliminated ? '#21262d' : '#30363d',
         opacity: isEliminated ? 0.65 : 1,
       }}
     >
@@ -78,23 +81,63 @@ export function PlayerCard({
       <div
         className="h-0.5 w-full"
         style={{
-          background: isEliminated
-            ? '#3d1f1f'
-            : isWinner
-              ? '#d4af37'
-              : '#1a4731',
+          background: isEliminated ? '#3d1f1f' : isWinner ? '#d4af37' : '#1a4731',
         }}
       />
 
       {/* Header row */}
       <div className="flex items-center justify-between px-3 pt-2 pb-1">
-        <span
-          className="text-[11px] font-semibold tracking-[0.15em] text-[#8b949e] uppercase"
-          style={{ fontFamily: 'var(--font-barlow)' }}
-        >
-          Seat {entry.seat_number ?? '?'}
-        </span>
+        {/* Left: avatar + seat */}
+        <div className="flex items-center gap-2">
+          {entry.player.avatar_url ? (
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '1px solid #30363d',
+                flexShrink: 0,
+              }}
+            >
+              <Image
+                src={entry.player.avatar_url}
+                alt=""
+                width={28}
+                height={28}
+                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+              />
+            </div>
+          ) : (
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: '#21262d',
+                border: '1px solid #30363d',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                fontFamily: 'var(--font-barlow)',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#8b949e',
+              }}
+            >
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <span
+            className="text-[11px] font-semibold tracking-[0.15em] text-[#8b949e] uppercase"
+            style={{ fontFamily: 'var(--font-barlow)' }}
+          >
+            Seat {entry.seat_number ?? '?'}
+          </span>
+        </div>
 
+        {/* Right: badges + edit button */}
         <div className="flex items-center gap-1.5">
           {isWinner && (
             <span
@@ -130,6 +173,32 @@ export function PlayerCard({
                 ({(entryFee * (entry.rebuy_count + 1)).toLocaleString()}₽)
               </span>
             </span>
+          )}
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit(entry)
+              }}
+              title="Редактировать"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#484f58',
+                padding: '2px 3px',
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: '3px',
+                transition: 'color 0.15s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#8b949e')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#484f58')}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+              </svg>
+            </button>
           )}
         </div>
       </div>

@@ -18,7 +18,7 @@ export default async function RegisterPlayersPage({ params }: Props) {
   ] = await Promise.all([
     supabase
       .from('tournaments')
-      .select('id, created_at, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, poster_url')
+      .select('id, created_at, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, poster_url, dealer_player_id')
       .eq('id', id)
       .single(),
     supabase
@@ -31,7 +31,7 @@ export default async function RegisterPlayersPage({ params }: Props) {
       .select(
         `id, registered_at, tournament_id, player_id, seat_number, status, current_bounty,
          guaranteed_bounty, rebuy_count, eliminated_at, final_position,
-         player:players(id, created_at, name, nickname, avatar_url)`,
+         player:players(id, created_at, name, nickname, avatar_url, user_id)`,
       )
       .eq('tournament_id', id)
       .order('registered_at', { ascending: true })

@@ -54,6 +54,8 @@ export type Database = {
           prize_distribution: Json
           blind_structure_id: string
           poster_url: string | null
+          blind_level_overrides?: Json
+          dealer_player_id?: string | null
         }
         Insert: {
           id?: string
@@ -69,6 +71,8 @@ export type Database = {
           prize_distribution?: Json
           blind_structure_id: string
           poster_url?: string | null
+          blind_level_overrides?: Json
+          dealer_player_id?: string | null
         }
         Update: {
           id?: string
@@ -84,6 +88,8 @@ export type Database = {
           prize_distribution?: Json
           blind_structure_id?: string
           poster_url?: string | null
+          blind_level_overrides?: Json
+          dealer_player_id?: string | null
         }
         Relationships: [
           {

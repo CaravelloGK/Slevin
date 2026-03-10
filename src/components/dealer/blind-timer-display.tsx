@@ -13,7 +13,8 @@ export function BlindTimerDisplay({ tournament, currentLevel, nextLevel }: Blind
   const { secondsLeft, isPaused, progressPct } = useBlindTimer(tournament, currentLevel)
 
   const isUrgent = secondsLeft <= 60 && secondsLeft > 0 && !isPaused
-  const timeColor = isPaused ? '#8b949e' : isUrgent ? '#da3633' : '#e6edf3'
+  const isExpired = secondsLeft === 0 && !isPaused && tournament.status === 'running'
+  const timeColor = isPaused ? '#8b949e' : isExpired ? '#d29922' : isUrgent ? '#da3633' : '#e6edf3'
 
   return (
     <div className="flex items-center gap-6">
@@ -74,7 +75,7 @@ export function BlindTimerDisplay({ tournament, currentLevel, nextLevel }: Blind
           {isPaused ? 'Пауза' : 'Время'}
         </span>
         <span
-          className="text-5xl leading-none tabular-nums transition-colors duration-300"
+          className={`text-5xl leading-none tabular-nums transition-colors duration-300${isExpired ? ' animate-pulse' : ''}`}
           style={{ fontFamily: 'var(--font-bebas)', color: timeColor, letterSpacing: '0.05em' }}
         >
           {formatTime(secondsLeft)}

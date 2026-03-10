@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { createTournament } from '@/lib/actions/admin'
+import { useState, useTransition, useRef } from 'react'
+import { createTournament, updateTournamentPoster } from '@/lib/actions/admin'
+import { createBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -45,7 +46,7 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState<TournamentFormState>({
     name: '',
-    bounty_amount: '20',
+    bounty_amount: '1000',
     entry_fee: '4000',
     blind_structure_id: structures[0]?.id ?? '',
   })
@@ -54,6 +55,9 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
     { percentage: '25' },
     { percentage: '10' },
   ])
+  const [posterFile, setPosterFile] = useState<File | null>(null)
+  const [posterPreview, setPosterPreview] = useState<string | null>(null)
+  const posterInputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -73,6 +77,24 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
   function removePrizePlace() {
     if (prizePlaces.length <= 1) return
     setPrizePlaces((prev) => prev.slice(0, -1))
+  }
+
+  function handlePosterChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null
+    setPosterFile(file)
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setPosterPreview(url)
+    } else {
+      setPosterPreview(null)
+    }
+  }
+
+  function resetForm() {
+    setForm({ name: '', bounty_amount: '20', entry_fee: '4000', blind_structure_id: structures[0]?.id ?? '' })
+    setPrizePlaces([{ percentage: '65' }, { percentage: '25' }, { percentage: '10' }])
+    setPosterFile(null)
+    setPosterPreview(null)
   }
 
   function handleSubmit() {
@@ -114,9 +136,33 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
         setError(result.error)
         return
       }
+
+      const tournamentId = result.data.id
+
+      // Upload poster if selected
+      if (posterFile) {
+        const supabase = createBrowserClient()
+        const ext = posterFile.name.split('.').pop() ?? 'jpg'
+        const path = `${tournamentId}/poster.${ext}`
+        const { error: uploadError } = await supabase.storage
+          .from('tournament-posters')
+          .upload(path, posterFile, { upsert: true })
+
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('tournament-posters')
+            .getPublicUrl(path)
+          if (urlData?.publicUrl) {
+            await updateTournamentPoster({
+              tournament_id: tournamentId,
+              poster_url: urlData.publicUrl,
+            })
+          }
+        }
+      }
+
       setOpen(false)
-      setForm({ name: '', bounty_amount: '20', entry_fee: '4000', blind_structure_id: structures[0]?.id ?? '' })
-      setPrizePlaces([{ percentage: '65' }, { percentage: '25' }, { percentage: '10' }])
+      resetForm()
     })
   }
 
@@ -171,7 +217,7 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
                   )}
                   {t.status === 'finished' && (
                     <Button variant="outline" size="sm" asChild>
-                      <a href={`/tournament/${t.id}/report`}>Статистика</a>
+                      <a href={`/club/${t.id}`}>Статистика</a>
                     </Button>
                   )}
                 </td>
@@ -181,8 +227,8 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
         </table>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v) }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Новый турнир</DialogTitle>
           </DialogHeader>
@@ -238,6 +284,55 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
               </select>
             </div>
 
+            {/* Poster upload */}
+            <div className="space-y-1.5">
+              <Label>Постер турнира (необязательно)</Label>
+              <div
+                className="border border-dashed border-border rounded-md p-4 flex flex-col items-center gap-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() => posterInputRef.current?.click()}
+              >
+                {posterPreview ? (
+                  <img
+                    src={posterPreview}
+                    alt="Постер"
+                    className="w-full max-h-40 object-contain rounded"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="m21 15-5-5L5 21" />
+                    </svg>
+                    <span className="text-sm">Нажмите для загрузки изображения</span>
+                    <span className="text-xs">JPG, PNG, WEBP до 5 МБ</span>
+                  </div>
+                )}
+                {posterPreview && (
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setPosterFile(null)
+                      setPosterPreview(null)
+                      if (posterInputRef.current) posterInputRef.current.value = ''
+                    }}
+                  >
+                    Удалить
+                  </button>
+                )}
+              </div>
+              <input
+                ref={posterInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handlePosterChange}
+                disabled={isPending}
+              />
+            </div>
+
             {/* Prize distribution */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -267,11 +362,11 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
                   const pct = parseInt(place.percentage, 10) || 0
                   const amount = entryFeeNum > 0 ? Math.round(entryFeeNum * pct / 100) : null
                   return (
-                    <div key={idx} className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground w-12 shrink-0">
+                    <div key={idx} className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground w-24 shrink-0 whitespace-nowrap">
                         {ORDINALS[idx] ?? `${idx + 1}-е`} место
                       </span>
-                      <div className="flex items-center gap-1 flex-1">
+                      <div className="flex items-center gap-1">
                         <Input
                           type="number"
                           min={0}
@@ -283,16 +378,10 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
                         />
                         <span className="text-sm text-muted-foreground">%</span>
                       </div>
-                      {amount !== null && amount > 0 && (
-                        <span className="text-sm font-medium tabular-nums">
-                          ₽{amount.toLocaleString()}
-                        </span>
-                      )}
                     </div>
                   )
                 })}
 
-                {/* Total */}
                 <div className="pt-1 border-t border-border flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Итого</span>
                   <span
@@ -311,7 +400,7 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
             {error && <p className="text-sm text-destructive">{error}</p>}
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+              <Button variant="outline" onClick={() => { resetForm(); setOpen(false) }} disabled={isPending}>
                 Отмена
               </Button>
               <Button onClick={handleSubmit} disabled={isPending || !form.name.trim()}>

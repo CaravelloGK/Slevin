@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { ApiResponse } from '@/types/api'
 import type { Database } from '@/types/database.types'
 
@@ -14,6 +15,34 @@ function createServiceClient() {
 }
 
 // ---- Schemas ----------------------------------------------------------------
+
+const adjustPlayerCardSchema = z.object({
+  tournament_player_id: z.string().uuid(),
+  tournament_id: z.string().uuid(),
+  current_bounty: z.number().int().min(0),
+  guaranteed_bounty: z.number().int().min(0),
+  rebuy_count: z.number().int().min(0),
+  seat_number: z.number().int().min(1).max(200).nullable().optional(),
+  status: z.enum(['active', 'eliminated', 'winner']),
+})
+
+const blindLevelOverrideItem = z.object({
+  level_number: z.number().int().min(1),
+  small_blind: z.number().int().min(0),
+  big_blind: z.number().int().min(0),
+  ante: z.number().int().min(0),
+  duration_minutes: z.number().int().min(1),
+})
+
+const updateBlindOverridesSchema = z.object({
+  tournament_id: z.string().uuid(),
+  overrides: z.array(blindLevelOverrideItem),
+})
+
+const jumpToLevelSchema = z.object({
+  tournament_id: z.string().uuid(),
+  target_level: z.number().int().min(1),
+})
 
 const knockoutSchema = z.object({
   tournament_id: z.string().uuid(),
@@ -271,6 +300,128 @@ export async function advanceLevel(
   return { success: true, data: { new_level: newLevel } }
 }
 
+export async function adjustPlayerCard(
+  input: z.infer<typeof adjustPlayerCardSchema>,
+): Promise<ApiResponse<{ message: string }>> {
+  const parsed = adjustPlayerCardSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: 'Invalid input' }
+
+  const { user } = await getAuthorizedUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  const db = createServiceClient()
+
+  const updatePayload: Record<string, unknown> = {
+    current_bounty: parsed.data.current_bounty,
+    guaranteed_bounty: parsed.data.guaranteed_bounty,
+    rebuy_count: parsed.data.rebuy_count,
+    status: parsed.data.status,
+  }
+  if (parsed.data.seat_number !== undefined) {
+    updatePayload.seat_number = parsed.data.seat_number
+  }
+
+  const { error } = await db
+    .from('tournament_players')
+    .update(updatePayload)
+    .eq('id', parsed.data.tournament_player_id)
+    .eq('tournament_id', parsed.data.tournament_id)
+
+  if (error) return { success: false, error: error.message, code: 'DB_ERROR' }
+
+  await db.from('tournament_logs').insert({
+    tournament_id: parsed.data.tournament_id,
+    event_type: 'player.bounty_adjusted',
+    actor_player_id: null,
+    data_json: {
+      tournament_player_id: parsed.data.tournament_player_id,
+      current_bounty: parsed.data.current_bounty,
+      guaranteed_bounty: parsed.data.guaranteed_bounty,
+      rebuy_count: parsed.data.rebuy_count,
+      seat_number: parsed.data.seat_number ?? null,
+      status: parsed.data.status,
+      by_user: user.id,
+    },
+    source: 'dealer',
+  })
+
+  return { success: true, data: { message: 'ok' } }
+}
+
+export async function updateBlindLevelOverrides(
+  input: z.infer<typeof updateBlindOverridesSchema>,
+): Promise<ApiResponse<{ message: string }>> {
+  const parsed = updateBlindOverridesSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: 'Invalid input' }
+
+  const { user, supabase } = await getAuthorizedUser()
+  if (!user || !supabase) return { success: false, error: 'Unauthorized' }
+
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ blind_level_overrides: parsed.data.overrides })
+    .eq('id', parsed.data.tournament_id)
+
+  if (error) return { success: false, error: error.message, code: 'DB_ERROR' }
+
+  await supabase.from('tournament_logs').insert({
+    tournament_id: parsed.data.tournament_id,
+    event_type: 'timer.level_advanced',
+    actor_player_id: null,
+    data_json: {
+      action: 'structure_override',
+      override_count: parsed.data.overrides.length,
+      by_user: user.id,
+    },
+    source: 'dealer',
+  })
+
+  return { success: true, data: { message: 'ok' } }
+}
+
+export async function jumpToLevel(
+  input: z.infer<typeof jumpToLevelSchema>,
+): Promise<ApiResponse<{ new_level: number }>> {
+  const parsed = jumpToLevelSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: 'Invalid input' }
+
+  const { user, supabase } = await getAuthorizedUser()
+  if (!user || !supabase) return { success: false, error: 'Unauthorized' }
+
+  const { data: tournament, error: fetchError } = await supabase
+    .from('tournaments')
+    .select('current_level')
+    .eq('id', parsed.data.tournament_id)
+    .single()
+
+  if (fetchError || !tournament) return { success: false, error: 'Tournament not found' }
+
+  const { error } = await supabase
+    .from('tournaments')
+    .update({
+      current_level: parsed.data.target_level,
+      level_started_at: new Date().toISOString(),
+    })
+    .eq('id', parsed.data.tournament_id)
+
+  if (error) return { success: false, error: 'Failed to jump to level' }
+
+  await supabase.from('tournament_logs').insert({
+    tournament_id: parsed.data.tournament_id,
+    event_type: 'timer.level_advanced',
+    actor_player_id: null,
+    data_json: {
+      from_level: tournament.current_level,
+      to_level: parsed.data.target_level,
+      action: 'jump',
+      by_user: user.id,
+    },
+    source: 'dealer',
+  })
+
+  return { success: true, data: { new_level: parsed.data.target_level } }
+}
+
 export async function endTournament(
   input: z.infer<typeof endTournamentSchema>,
 ): Promise<ApiResponse<{ message: string }>> {
@@ -299,6 +450,28 @@ export async function endTournament(
   })
 
   if (error) return { success: false, error: error.message, code: 'DB_ERROR' }
+
+  // Revert dealer role back to 'player' after tournament ends
+  const { data: tournamentRow } = await db
+    .from('tournaments')
+    .select('dealer_player_id')
+    .eq('id', parsed.data.tournament_id)
+    .single()
+
+  if (tournamentRow?.dealer_player_id) {
+    const { data: dealerPlayer } = await db
+      .from('players')
+      .select('user_id')
+      .eq('id', tournamentRow.dealer_player_id)
+      .single()
+
+    if (dealerPlayer?.user_id) {
+      const adminClient = createAdminClient()
+      await adminClient.auth.admin.updateUserById(dealerPlayer.user_id, {
+        user_metadata: { role: 'player' },
+      })
+    }
+  }
 
   return { success: true, data: { message: 'ok' } }
 }
