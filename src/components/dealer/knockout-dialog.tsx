@@ -162,13 +162,13 @@ export function KnockoutDialog({
                   className="text-3xl font-bold text-[#d4af37]"
                   style={{ fontFamily: 'var(--font-space-mono)' }}
                 >
-                  +₽{bountyTransfer.toLocaleString()}
+                  +{bountyTransfer.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span>
                 </div>
                 <div
                   className="text-[11px] text-[#8b949e] mt-1"
                   style={{ fontFamily: 'var(--font-barlow)' }}
                 >
-                  50% от ₽{victim.current_bounty.toLocaleString()} → {(selectedKiller.player.nickname ?? selectedKiller.player.name).toUpperCase()}
+                  50% от {victim.current_bounty.toLocaleString()}<span style={{ fontSize: '0.8em' }}> ₽</span> → {(selectedKiller.player.nickname ?? selectedKiller.player.name).toUpperCase()}
                 </div>
               </div>
             </div>

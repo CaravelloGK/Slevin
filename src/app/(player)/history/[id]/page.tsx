@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-header'
@@ -55,7 +56,7 @@ export default async function HistoryTournamentPage({ params }: Props) {
   const { data: tournament, error } = await supabase
     .from('tournaments')
     .select(
-      'id, name, status, bounty_amount, entry_fee, prize_distribution, started_at, finished_at',
+      'id, name, status, bounty_amount, entry_fee, prize_distribution, started_at, finished_at, dealer_player_id',
     )
     .eq('id', id)
     .single()
@@ -94,15 +95,17 @@ export default async function HistoryTournamentPage({ params }: Props) {
   const prizeDistribution = parsePrizeDistribution(tournament.prize_distribution)
   const { data: allEntries } = await supabase
     .from('tournament_players')
-    .select('id, rebuy_count')
+    .select('id, player_id, rebuy_count')
     .eq('tournament_id', id)
     .limit(200)
 
-  const playerCount = allEntries?.length ?? 0
-  const totalReentries = (allEntries ?? []).reduce((s, p) => s + p.rebuy_count, 0)
+  const dealerPlayerId = tournament.dealer_player_id ?? null
+  const competingEntries = (allEntries ?? []).filter((e) => e.player_id !== dealerPlayerId)
+  const playerCount = competingEntries.length
+  const totalReentries = competingEntries.reduce((s, p) => s + p.rebuy_count, 0)
   const prizePool = tournament.entry_fee * (playerCount + totalReentries)
 
-  const spent = tournament.entry_fee * (myEntry.rebuy_count + 1)
+  const spent = (tournament.entry_fee + tournament.bounty_amount) * (myEntry.rebuy_count + 1)
   const isWinner = myEntry.status === 'winner'
   const myPosition = isWinner ? 1 : myEntry.final_position
   const bountyEarned = isWinner
@@ -183,17 +186,17 @@ export default async function HistoryTournamentPage({ params }: Props) {
           />
           <StatCard label="Реентри" value={myEntry.rebuy_count > 0 ? `×${myEntry.rebuy_count}` : '0'} />
           {tournament.entry_fee > 0 && (
-            <StatCard label="Потрачено" value={`₽${spent.toLocaleString()}`} />
+            <StatCard label="Потрачено" value={<>{spent.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></>} />
           )}
           <StatCard
             label="Баунти собрано"
-            value={bountyEarned > 0 ? `₽${bountyEarned.toLocaleString()}` : '—'}
+            value={bountyEarned > 0 ? <>{bountyEarned.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></> : '—'}
             highlight={bountyEarned > 0}
           />
           {prizeWon > 0 && (
             <StatCard
               label="Выигрыш"
-              value={`₽${prizeWon.toLocaleString()}`}
+              value={<>{prizeWon.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></>}
               highlight
             />
           )}
@@ -222,7 +225,7 @@ function StatCard({
   highlight,
 }: {
   label: string
-  value: string
+  value: ReactNode
   highlight?: boolean
 }) {
   return (

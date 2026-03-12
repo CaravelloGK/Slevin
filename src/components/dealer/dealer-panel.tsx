@@ -209,6 +209,7 @@ export function DealerPanel({
               key={entry.id}
               entry={entry}
               entryFee={tournament.entry_fee}
+              bountyAmount={tournament.bounty_amount}
               tournamentFinished={tournament.status === 'finished'}
               onKnockout={setKnockoutVictim}
               onRebuy={setRebuyPlayer}

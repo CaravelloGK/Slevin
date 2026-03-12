@@ -54,7 +54,7 @@ export default async function RegisterPlayersPage({ params }: Props) {
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Регистрация игроков</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Баунти за игрока: ₽{tournament.bounty_amount}
+          Баунти за игрока: {tournament.bounty_amount}<span style={{ fontSize: '0.8em' }}> ₽</span>
         </p>
       </div>
       <PlayerRegistration

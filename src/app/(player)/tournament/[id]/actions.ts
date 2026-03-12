@@ -52,3 +52,41 @@ export async function registerForTournament(
   revalidatePath(`/tournament/${tournamentId}`)
   return { success: true }
 }
+
+export async function unregisterFromTournament(
+  tournamentId: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const supabase = await createServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Не авторизован' }
+
+  const { data: player } = await supabase
+    .from('players')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (!player) return { success: false, error: 'Профиль игрока не найден' }
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('status')
+    .eq('id', tournamentId)
+    .single()
+
+  if (!tournament) return { success: false, error: 'Турнир не найден' }
+  if (tournament.status !== 'pending') return { success: false, error: 'Регистрация закрыта' }
+
+  const { error } = await supabase
+    .from('tournament_players')
+    .delete()
+    .eq('tournament_id', tournamentId)
+    .eq('player_id', player.id)
+
+  if (error) return { success: false, error: 'Ошибка отмены регистрации' }
+
+  revalidatePath(`/tournament/${tournamentId}`)
+  return { success: true }
+}

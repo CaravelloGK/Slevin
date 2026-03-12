@@ -27,7 +27,7 @@ export function AppHeader({ role }: AppHeaderProps) {
         </span>
       </Link>
       <div className="flex-1" />
-      {role && (
+      {(role === 'admin' || role === 'dealer') && (
         <span className="text-xs uppercase tracking-widest" style={{ color: '#484f58' }}>
           {roleLabel(role)}
         </span>

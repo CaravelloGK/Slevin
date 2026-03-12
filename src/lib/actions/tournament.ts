@@ -71,6 +71,29 @@ const endTournamentSchema = z.object({
 
 // ---- Helpers ----------------------------------------------------------------
 
+async function revertDealerRole(db: ReturnType<typeof createServiceClient>, tournamentId: string) {
+  const { data: t } = await db
+    .from('tournaments')
+    .select('dealer_player_id')
+    .eq('id', tournamentId)
+    .single()
+
+  if (!t?.dealer_player_id) return
+
+  const { data: dealerPlayer } = await db
+    .from('players')
+    .select('user_id')
+    .eq('id', t.dealer_player_id)
+    .single()
+
+  if (dealerPlayer?.user_id) {
+    const adminClient = createAdminClient()
+    await adminClient.auth.admin.updateUserById(dealerPlayer.user_id, {
+      user_metadata: { role: 'player' },
+    })
+  }
+}
+
 async function getAuthorizedUser() {
   const supabase = await createServerClient()
   const {
@@ -110,18 +133,31 @@ export async function recordKnockout(
     return { success: false, error: error.message, code: 'DB_ERROR' }
   }
 
-  // Auto-end when exactly 1 active player remains
-  const { count } = await db
+  // Auto-end when exactly 1 competing player remains (dealer excluded)
+  const { data: tournamentRow } = await db
+    .from('tournaments')
+    .select('dealer_player_id')
+    .eq('id', parsed.data.tournament_id)
+    .single()
+
+  let activeQuery = db
     .from('tournament_players')
     .select('id', { count: 'exact', head: true })
     .eq('tournament_id', parsed.data.tournament_id)
     .eq('status', 'active')
+
+  if (tournamentRow?.dealer_player_id) {
+    activeQuery = activeQuery.neq('player_id', tournamentRow.dealer_player_id)
+  }
+
+  const { count } = await activeQuery
 
   if (count === 1) {
     await db.rpc('process_end_tournament', {
       p_tournament_id: parsed.data.tournament_id,
       p_actor_id: null,
     })
+    await revertDealerRole(db, parsed.data.tournament_id)
   }
 
   return { success: true, data: { message: 'ok' } }
@@ -160,22 +196,24 @@ export async function pauseTimer(
   const parsed = timerControlSchema.safeParse(input)
   if (!parsed.success) return { success: false, error: 'Invalid input' }
 
-  const { user, supabase } = await getAuthorizedUser()
-  if (!user || !supabase) return { success: false, error: 'Unauthorized' }
+  const { user } = await getAuthorizedUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  const db = createServiceClient()
 
   // Build update: always set status=paused.
   // If seconds_remaining is provided, shift level_started_at so the frozen
   // time survives a page refresh (computeSecondsLeft will return the same value).
   const update: Record<string, unknown> = { status: 'paused' }
   if (parsed.data.seconds_remaining !== undefined) {
-    const { data: levelData } = await supabase
+    const { data: levelData } = await db
       .from('tournaments')
       .select('current_level, blind_structure_id')
       .eq('id', parsed.data.tournament_id)
       .single()
 
     if (levelData) {
-      const { data: level } = await supabase
+      const { data: level } = await db
         .from('blind_levels')
         .select('duration_minutes')
         .eq('blind_structure_id', levelData.blind_structure_id)
@@ -189,14 +227,14 @@ export async function pauseTimer(
     }
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('tournaments')
     .update(update)
     .eq('id', parsed.data.tournament_id)
 
   if (error) return { success: false, error: 'Failed to pause' }
 
-  await supabase.from('tournament_logs').insert({
+  await db.from('tournament_logs').insert({
     tournament_id: parsed.data.tournament_id,
     event_type: 'timer.paused',
     actor_player_id: user.id,
@@ -213,20 +251,22 @@ export async function resumeTimer(
   const parsed = timerControlSchema.safeParse(input)
   if (!parsed.success) return { success: false, error: 'Invalid input' }
 
-  const { user, supabase } = await getAuthorizedUser()
-  if (!user || !supabase) return { success: false, error: 'Unauthorized' }
+  const { user } = await getAuthorizedUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  const db = createServiceClient()
 
   // Calculate effective level_started_at accounting for paused time
   let levelStartedAt = new Date().toISOString()
   if (parsed.data.seconds_remaining !== undefined) {
-    const { data: tournament } = await supabase
+    const { data: tournament } = await db
       .from('tournaments')
       .select('current_level, blind_structure_id')
       .eq('id', parsed.data.tournament_id)
       .single()
 
     if (tournament) {
-      const { data: level } = await supabase
+      const { data: level } = await db
         .from('blind_levels')
         .select('duration_minutes')
         .eq('blind_structure_id', tournament.blind_structure_id)
@@ -241,14 +281,14 @@ export async function resumeTimer(
     }
   }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('tournaments')
     .update({ status: 'running', level_started_at: levelStartedAt })
     .eq('id', parsed.data.tournament_id)
 
   if (error) return { success: false, error: 'Failed to resume' }
 
-  await supabase.from('tournament_logs').insert({
+  await db.from('tournament_logs').insert({
     tournament_id: parsed.data.tournament_id,
     event_type: 'timer.resumed',
     actor_player_id: user.id,
@@ -265,10 +305,12 @@ export async function advanceLevel(
   const parsed = advanceLevelSchema.safeParse(input)
   if (!parsed.success) return { success: false, error: 'Invalid input' }
 
-  const { user, supabase } = await getAuthorizedUser()
-  if (!user || !supabase) return { success: false, error: 'Unauthorized' }
+  const { user } = await getAuthorizedUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
 
-  const { data: tournament, error: fetchError } = await supabase
+  const db = createServiceClient()
+
+  const { data: tournament, error: fetchError } = await db
     .from('tournaments')
     .select('current_level')
     .eq('id', parsed.data.tournament_id)
@@ -279,7 +321,7 @@ export async function advanceLevel(
   const delta = parsed.data.direction === 'next' ? 1 : -1
   const newLevel = Math.max(1, tournament.current_level + delta)
 
-  const { error } = await supabase
+  const { error } = await db
     .from('tournaments')
     .update({
       current_level: newLevel,
@@ -289,7 +331,7 @@ export async function advanceLevel(
 
   if (error) return { success: false, error: 'Failed to advance level' }
 
-  await supabase.from('tournament_logs').insert({
+  await db.from('tournament_logs').insert({
     tournament_id: parsed.data.tournament_id,
     event_type: 'timer.level_advanced',
     actor_player_id: user.id,
@@ -354,17 +396,19 @@ export async function updateBlindLevelOverrides(
   const parsed = updateBlindOverridesSchema.safeParse(input)
   if (!parsed.success) return { success: false, error: 'Invalid input' }
 
-  const { user, supabase } = await getAuthorizedUser()
-  if (!user || !supabase) return { success: false, error: 'Unauthorized' }
+  const { user } = await getAuthorizedUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
 
-  const { error } = await supabase
+  const db = createServiceClient()
+
+  const { error } = await db
     .from('tournaments')
     .update({ blind_level_overrides: parsed.data.overrides })
     .eq('id', parsed.data.tournament_id)
 
   if (error) return { success: false, error: error.message, code: 'DB_ERROR' }
 
-  await supabase.from('tournament_logs').insert({
+  await db.from('tournament_logs').insert({
     tournament_id: parsed.data.tournament_id,
     event_type: 'timer.level_advanced',
     actor_player_id: null,
@@ -385,10 +429,12 @@ export async function jumpToLevel(
   const parsed = jumpToLevelSchema.safeParse(input)
   if (!parsed.success) return { success: false, error: 'Invalid input' }
 
-  const { user, supabase } = await getAuthorizedUser()
-  if (!user || !supabase) return { success: false, error: 'Unauthorized' }
+  const { user } = await getAuthorizedUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
 
-  const { data: tournament, error: fetchError } = await supabase
+  const db = createServiceClient()
+
+  const { data: tournament, error: fetchError } = await db
     .from('tournaments')
     .select('current_level')
     .eq('id', parsed.data.tournament_id)
@@ -396,7 +442,7 @@ export async function jumpToLevel(
 
   if (fetchError || !tournament) return { success: false, error: 'Tournament not found' }
 
-  const { error } = await supabase
+  const { error } = await db
     .from('tournaments')
     .update({
       current_level: parsed.data.target_level,
@@ -406,7 +452,7 @@ export async function jumpToLevel(
 
   if (error) return { success: false, error: 'Failed to jump to level' }
 
-  await supabase.from('tournament_logs').insert({
+  await db.from('tournament_logs').insert({
     tournament_id: parsed.data.tournament_id,
     event_type: 'timer.level_advanced',
     actor_player_id: null,
@@ -451,27 +497,7 @@ export async function endTournament(
 
   if (error) return { success: false, error: error.message, code: 'DB_ERROR' }
 
-  // Revert dealer role back to 'player' after tournament ends
-  const { data: tournamentRow } = await db
-    .from('tournaments')
-    .select('dealer_player_id')
-    .eq('id', parsed.data.tournament_id)
-    .single()
-
-  if (tournamentRow?.dealer_player_id) {
-    const { data: dealerPlayer } = await db
-      .from('players')
-      .select('user_id')
-      .eq('id', tournamentRow.dealer_player_id)
-      .single()
-
-    if (dealerPlayer?.user_id) {
-      const adminClient = createAdminClient()
-      await adminClient.auth.admin.updateUserById(dealerPlayer.user_id, {
-        user_metadata: { role: 'player' },
-      })
-    }
-  }
+  await revertDealerRole(db, parsed.data.tournament_id)
 
   return { success: true, data: { message: 'ok' } }
 }

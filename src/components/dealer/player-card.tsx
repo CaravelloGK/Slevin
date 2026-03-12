@@ -1,11 +1,13 @@
 'use client'
 
 import Image from 'next/image'
+import { Ticket, Crosshair } from 'lucide-react'
 import type { TournamentPlayerWithProfile } from '@/types/tournament'
 
 interface PlayerCardProps {
   entry: TournamentPlayerWithProfile
   entryFee: number
+  bountyAmount: number
   tournamentFinished?: boolean
   onKnockout: (victim: TournamentPlayerWithProfile) => void
   onRebuy: (player: TournamentPlayerWithProfile) => void
@@ -17,6 +19,7 @@ interface PlayerCardProps {
 export function PlayerCard({
   entry,
   entryFee,
+  bountyAmount,
   tournamentFinished = false,
   onKnockout,
   onRebuy,
@@ -60,7 +63,7 @@ export function PlayerCard({
             className="text-lg font-bold text-[#d4af37] mt-1"
             style={{ fontFamily: 'var(--font-space-mono)' }}
           >
-            ₽{entry.current_bounty.toLocaleString()}
+            {entry.current_bounty.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span>
           </div>
         </div>
       </button>
@@ -137,42 +140,44 @@ export function PlayerCard({
           </span>
         </div>
 
-        {/* Right: badges + edit button */}
+        {/* Right: badges + financials + edit button */}
         <div className="flex items-center gap-1.5">
-          {isWinner && (
-            <span
-              className="text-[10px] font-bold tracking-widest px-1.5 py-0.5 rounded"
-              style={{
-                background: '#3d2e00',
-                color: '#d4af37',
-                fontFamily: 'var(--font-barlow)',
-              }}
-            >
-              ПОБЕДИТЕЛЬ
-            </span>
-          )}
           {isEliminated && (
             <span
               className="text-[10px] font-bold tracking-widest px-1.5 py-0.5 rounded"
-              style={{
-                background: '#3d1f1f',
-                color: '#da3633',
-                fontFamily: 'var(--font-barlow)',
-              }}
+              style={{ background: '#3d1f1f', color: '#da3633', fontFamily: 'var(--font-barlow)' }}
             >
               ВЫБЫЛ
             </span>
           )}
-          {entry.rebuy_count > 0 && (
-            <span
-              className="text-[10px] font-semibold tracking-wider text-[#8b949e]"
-              style={{ fontFamily: 'var(--font-barlow)' }}
-            >
-              R×{entry.rebuy_count}{' '}
-              <span style={{ color: '#6e7681' }}>
-                ({(entryFee * (entry.rebuy_count + 1)).toLocaleString()}₽)
+          {(entryFee > 0 || bountyAmount > 0) && (
+            <div className="flex flex-col items-end gap-0.5">
+              {entry.rebuy_count > 0 && (
+                <span
+                  className="text-[10px] font-semibold tracking-wider text-[#8b949e]"
+                  style={{ fontFamily: 'var(--font-barlow)' }}
+                >
+                  R×{entry.rebuy_count}{' '}
+                  <span style={{ color: '#6e7681' }}>
+                    ({((entryFee + bountyAmount) * (entry.rebuy_count + 1)).toLocaleString()}₽)
+                  </span>
+                </span>
+              )}
+              <span
+                className="flex items-center gap-1 text-[10px]"
+                style={{ fontFamily: 'var(--font-space-mono)' }}
+              >
+                <Ticket size={9} style={{ color: '#6e7681', flexShrink: 0 }} />
+                <span style={{ color: '#6e7681' }}>
+                    {(entryFee * (entry.rebuy_count + 1)).toLocaleString()}<span style={{ fontSize: 7 }}> ₽</span>
+                </span>
+                <span style={{ color: '#30363d' }}>/</span>
+                <Crosshair size={9} style={{ color: '#7f1d1d', flexShrink: 0 }} />
+                <span style={{ color: '#ef4444' }}>
+                    {(bountyAmount * (entry.rebuy_count + 1)).toLocaleString()}<span style={{ fontSize: 7 }}> ₽</span>
+                </span>
               </span>
-            </span>
+            </div>
           )}
           {onEdit && (
             <button
@@ -205,17 +210,27 @@ export function PlayerCard({
 
       {/* Player name */}
       <div className="px-3 pb-2">
-        <span
-          className="text-base font-bold leading-tight block"
-          style={{
-            fontFamily: 'var(--font-barlow)',
-            color: isEliminated ? '#484f58' : '#e6edf3',
-            textDecoration: isEliminated ? 'line-through' : 'none',
-            textDecorationColor: '#484f58',
-          }}
-        >
-          {displayName.toUpperCase()}
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className="text-base font-bold leading-tight"
+            style={{
+              fontFamily: 'var(--font-barlow)',
+              color: isEliminated ? '#484f58' : '#e6edf3',
+              textDecoration: isEliminated ? 'line-through' : 'none',
+              textDecorationColor: '#484f58',
+            }}
+          >
+            {displayName.toUpperCase()}
+          </span>
+          {isWinner && (
+            <span
+              className="text-[10px] font-bold tracking-widest px-1.5 py-0.5 rounded"
+              style={{ background: '#3d2e00', color: '#d4af37', fontFamily: 'var(--font-barlow)' }}
+            >
+              ПОБЕДИТЕЛЬ
+            </span>
+          )}
+        </div>
         {entry.player.nickname && (
           <span
             className="text-[11px] text-[#484f58]"
@@ -245,7 +260,7 @@ export function PlayerCard({
               color: isEliminated || isWinner ? '#484f58' : '#d4af37',
             }}
           >
-            ₽{entry.current_bounty.toLocaleString()}
+            {entry.current_bounty.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span>
           </span>
         </div>
         <div className="flex flex-col items-end">
@@ -262,7 +277,7 @@ export function PlayerCard({
               color: entry.guaranteed_bounty > 0 ? '#9b7e1f' : '#30363d',
             }}
           >
-            ₽{entry.guaranteed_bounty.toLocaleString()}
+            {entry.guaranteed_bounty.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span>
           </span>
         </div>
       </div>

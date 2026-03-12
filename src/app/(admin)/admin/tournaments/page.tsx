@@ -7,7 +7,7 @@ export default async function TournamentsPage() {
   const [{ data: tournaments }, { data: structures }] = await Promise.all([
     supabase
       .from('tournaments')
-      .select('id, created_at, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, poster_url')
+      .select('id, created_at, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, poster_url, dealer_player_id')
       .order('created_at', { ascending: false })
       .limit(100),
     supabase

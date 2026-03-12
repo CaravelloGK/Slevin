@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { AppHeader } from '@/components/app-header'
 import { RegisterButton } from './register-button'
+import { TournamentLobbyRealtime } from './realtime'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -60,6 +61,7 @@ export default async function TournamentLobbyPage({ params }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#0d1117' }}>
+      <TournamentLobbyRealtime tournamentId={id} />
       <AppHeader role={role} />
       <main className="flex-1 px-6 py-8 max-w-lg mx-auto w-full">
         {/* Header */}
@@ -86,7 +88,7 @@ export default async function TournamentLobbyPage({ params }: Props) {
               className="text-lg font-bold text-[#e6edf3]"
               style={{ fontFamily: 'var(--font-space-mono)' }}
             >
-              {tournament.entry_fee > 0 ? `₽${tournament.entry_fee.toLocaleString()}` : 'Бесплатно'}
+              {tournament.entry_fee > 0 ? <>{tournament.entry_fee.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></> : 'Бесплатно'}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
@@ -98,7 +100,7 @@ export default async function TournamentLobbyPage({ params }: Props) {
               style={{ fontFamily: 'var(--font-space-mono)' }}
             >
               {tournament.bounty_amount > 0
-                ? `₽${tournament.bounty_amount.toLocaleString()}`
+                ? <>{tournament.bounty_amount.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></>
                 : '—'}
             </span>
           </div>
@@ -123,15 +125,8 @@ export default async function TournamentLobbyPage({ params }: Props) {
           >
             Профиль игрока не привязан к аккаунту. Обратитесь к администратору.
           </div>
-        ) : isRegistered ? (
-          <div
-            className="rounded-lg px-5 py-3 text-sm font-semibold text-center"
-            style={{ background: '#1a4731', color: '#2ea043' }}
-          >
-            Вы зарегистрированы
-          </div>
         ) : (
-          <RegisterButton tournamentId={id} />
+          <RegisterButton tournamentId={id} isRegistered={isRegistered} />
         )}
 
         {/* Player list */}

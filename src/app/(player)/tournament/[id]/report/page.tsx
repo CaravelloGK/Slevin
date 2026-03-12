@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import type { ReactNode } from 'react'
 import { createServerClient } from '@/lib/supabase/server'
 import type { TournamentPlayerWithProfile, PrizePlace } from '@/types/tournament'
 
@@ -45,14 +46,14 @@ export default async function ReportPage({ params }: Props) {
   const { data: tournament, error } = await supabase
     .from('tournaments')
     .select(
-      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, started_at, finished_at, created_at, blind_structure_id',
+      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, started_at, finished_at, created_at, blind_structure_id, dealer_player_id',
     )
     .eq('id', id)
     .single()
 
   if (error || !tournament) notFound()
 
-  // Fetch players with eliminated_at for stable position sorting
+  // Fetch all players including dealer (dealer is identified separately for display)
   const { data: rawPlayers } = await supabase
     .from('tournament_players')
     .select(
@@ -63,7 +64,10 @@ export default async function ReportPage({ params }: Props) {
     .eq('tournament_id', id)
     .limit(200)
 
-  const players = (rawPlayers ?? []) as (TournamentPlayerWithProfile & { eliminated_at: string | null })[]
+  const allPlayers = (rawPlayers ?? []) as (TournamentPlayerWithProfile & { eliminated_at: string | null })[]
+  const dealerPlayerId = tournament.dealer_player_id ?? null
+  // Competing players only (exclude dealer) — used for prize pool and stats
+  const players = allPlayers.filter((p) => p.player_id !== dealerPlayerId)
 
   // Fetch pause/resume events for net playing time
   const { data: timerEvents } = await supabase
@@ -102,15 +106,17 @@ export default async function ReportPage({ params }: Props) {
 
   const prizeDistribution = parsePrizeDistribution(tournament.prize_distribution)
 
-  // Sort players: winner first, then by final_position ASC, then eliminated_at ASC as tiebreaker,
-  // active (no position) at the end
-  const sorted = [...players].sort((a, b) => {
+  // Sort: winner first, then by final_position ASC, active at the end, dealer always last
+  const sorted = [...allPlayers].sort((a, b) => {
+    const aIsDealer = a.player_id === dealerPlayerId
+    const bIsDealer = b.player_id === dealerPlayerId
+    if (aIsDealer) return 1
+    if (bIsDealer) return -1
     if (a.status === 'winner') return -1
     if (b.status === 'winner') return 1
     const aPos = a.final_position ?? 9999
     const bPos = b.final_position ?? 9999
     if (aPos !== bPos) return aPos - bPos
-    // Same position: earlier elimination = lower (worse) place — sort by eliminated_at ASC
     const aT = a.eliminated_at ? new Date(a.eliminated_at).getTime() : 0
     const bT = b.eliminated_at ? new Date(b.eliminated_at).getTime() : 0
     return aT - bT
@@ -161,7 +167,7 @@ export default async function ReportPage({ params }: Props) {
           <StatCard label="Уровней блайнда" value={String(tournament.current_level)} />
           <StatCard label="Игроков" value={String(players.length)} />
           <StatCard label="Реентри" value={String(totalReentries)} />
-          <StatCard label="Призовой фонд" value={`₽${prizePool.toLocaleString()}`} />
+          <StatCard label="Призовой фонд" value={<>{prizePool.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></>} />
         </div>
       </section>
 
@@ -225,7 +231,7 @@ export default async function ReportPage({ params }: Props) {
                         className="px-4 py-3 text-right text-sm font-bold"
                         style={{ color: isTopPlace ? '#d4af37' : '#e6edf3', fontFamily: 'var(--font-space-mono)' }}
                       >
-                        {prizeAmount > 0 ? `₽${prizeAmount.toLocaleString()}` : '₽0'}
+                        {prizeAmount > 0 ? <>{prizeAmount.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></> : <>0<span style={{ fontSize: '0.65em' }}> ₽</span></>}
                       </td>
                     </tr>
                   )
@@ -255,9 +261,11 @@ export default async function ReportPage({ params }: Props) {
             <tbody>
               {sorted.map((p) => {
                 const name = p.player.nickname ?? p.player.name
+                const isDealer = p.player_id === dealerPlayerId
                 const isWinner = p.status === 'winner'
                 const isActive = p.status === 'active'
-                const spent = tournament.entry_fee * (p.rebuy_count + 1)
+                const costPerEntry = tournament.entry_fee + tournament.bounty_amount
+                const spent = isDealer ? 0 : costPerEntry * (p.rebuy_count + 1)
                 const pos = isWinner ? 1 : p.final_position
                 const bountyEarned = isWinner
                   ? p.current_bounty + p.guaranteed_bounty
@@ -274,11 +282,11 @@ export default async function ReportPage({ params }: Props) {
                       <span
                         className="text-sm font-bold"
                         style={{
-                          color: isWinner ? '#d4af37' : isActive ? '#2ea043' : '#8b949e',
+                          color: isDealer ? '#484f58' : isWinner ? '#d4af37' : isActive ? '#2ea043' : '#8b949e',
                           fontFamily: 'var(--font-space-mono)',
                         }}
                       >
-                        {isActive && !isFinished ? 'в игре' : pos ?? '—'}
+                        {isDealer ? 'Дилер' : isActive && !isFinished ? 'в игре' : pos ?? '—'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -309,14 +317,14 @@ export default async function ReportPage({ params }: Props) {
                       className="px-4 py-3 text-right text-sm font-semibold"
                       style={{ color: bountyEarned > 0 ? '#d4af37' : '#484f58', fontFamily: 'var(--font-space-mono)' }}
                     >
-                      {bountyEarned > 0 ? `₽${bountyEarned.toLocaleString()}` : '—'}
+                      {bountyEarned > 0 ? <>{bountyEarned.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></> : '—'}
                     </td>
                     {tournament.entry_fee > 0 && (
                       <td
                         className="px-4 py-3 text-right text-sm"
                         style={{ color: '#8b949e', fontFamily: 'var(--font-space-mono)' }}
                       >
-                        ₽{spent.toLocaleString()}
+                        {isDealer ? '—' : <>{spent.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></>}
                       </td>
                     )}
                   </tr>
@@ -338,7 +346,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function StatCard({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
     <div
       className="rounded-lg px-4 py-3 flex flex-col gap-0.5"

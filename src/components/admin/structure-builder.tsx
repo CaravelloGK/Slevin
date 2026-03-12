@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createBlindStructure, addBlindLevel, deleteBlindLevel } from '@/lib/actions/admin'
+import { createBlindStructure, addBlindLevel, updateBlindLevel, deleteBlindLevel } from '@/lib/actions/admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,6 +26,15 @@ interface LevelFormState {
 
 const emptyLevel: LevelFormState = { small_blind: '', big_blind: '', ante: '0', duration_minutes: '15' }
 
+function levelToForm(lvl: BlindLevel): LevelFormState {
+  return {
+    small_blind: String(lvl.small_blind),
+    big_blind: String(lvl.big_blind),
+    ante: String(lvl.ante),
+    duration_minutes: String(lvl.duration_minutes),
+  }
+}
+
 export function StructureBuilder({ structures }: StructureBuilderProps) {
   const [createOpen, setCreateOpen] = useState(false)
   const [newStructureName, setNewStructureName] = useState('')
@@ -36,7 +45,27 @@ export function StructureBuilder({ structures }: StructureBuilderProps) {
   const [levelForm, setLevelForm] = useState<LevelFormState>(emptyLevel)
   const [levelError, setLevelError] = useState<string | null>(null)
 
+  // Collapsed state — all collapsed by default
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  // Inline edit state: levelId -> form values
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<LevelFormState>(emptyLevel)
+  const [editError, setEditError] = useState<string | null>(null)
+
   const [isPending, startTransition] = useTransition()
+
+  function toggleExpanded(id: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
   function handleCreateStructure() {
     setStructureError(null)
@@ -90,6 +119,45 @@ export function StructureBuilder({ structures }: StructureBuilderProps) {
     })
   }
 
+  function startEdit(lvl: BlindLevel) {
+    setEditingId(lvl.id)
+    setEditForm(levelToForm(lvl))
+    setEditError(null)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditError(null)
+  }
+
+  function handleSaveEdit(lvl: BlindLevel) {
+    setEditError(null)
+    const sb = parseInt(editForm.small_blind, 10)
+    const bb = parseInt(editForm.big_blind, 10)
+    const ante = parseInt(editForm.ante, 10)
+    const dur = parseInt(editForm.duration_minutes, 10)
+
+    if (isNaN(sb) || sb < 1) { setEditError('МБ должен быть не менее 1'); return }
+    if (isNaN(bb) || bb < 1) { setEditError('ББ должен быть не менее 1'); return }
+    if (isNaN(dur) || dur < 1) { setEditError('Длительность должна быть не менее 1 мин'); return }
+
+    startTransition(async () => {
+      const result = await updateBlindLevel({
+        id: lvl.id,
+        blind_structure_id: lvl.blind_structure_id,
+        small_blind: sb,
+        big_blind: bb,
+        ante: isNaN(ante) ? 0 : ante,
+        duration_minutes: dur,
+      })
+      if (!result.success) {
+        setEditError(result.error)
+        return
+      }
+      setEditingId(null)
+    })
+  }
+
   function handleDeleteLevel(levelId: string, structureId: string) {
     startTransition(async () => {
       await deleteBlindLevel({ id: levelId, blind_structure_id: structureId })
@@ -99,7 +167,7 @@ export function StructureBuilder({ structures }: StructureBuilderProps) {
   const targetStructure = structures.find((s) => s.id === targetStructureId) ?? null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{structures.length} структур</p>
         <Button onClick={() => { setStructureError(null); setNewStructureName(''); setCreateOpen(true) }}>
@@ -113,57 +181,180 @@ export function StructureBuilder({ structures }: StructureBuilderProps) {
         </p>
       )}
 
-      {structures.map((structure) => (
-        <div key={structure.id} className="rounded-md border">
-          <div className="flex items-center justify-between px-4 py-3 bg-muted/30">
-            <span className="font-medium">{structure.name}</span>
-            <Button size="sm" variant="outline" onClick={() => openAddLevel(structure.id)}>
-              Добавить уровень
-            </Button>
+      {structures.map((structure) => {
+        const isExpanded = expandedIds.has(structure.id)
+        return (
+          <div key={structure.id} className="rounded-md border">
+            {/* Collapsible header */}
+            <button
+              type="button"
+              className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+              onClick={() => toggleExpanded(structure.id)}
+            >
+              <div className="flex items-center gap-2">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="text-muted-foreground shrink-0 transition-transform duration-150"
+                  style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                >
+                  <path d="M5 2l5 5-5 5" />
+                </svg>
+                <span className="font-medium">{structure.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {structure.blind_levels.length} уровн.
+                </span>
+              </div>
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0"
+              >
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openAddLevel(structure.id)}
+                  disabled={isPending}
+                >
+                  Добавить уровень
+                </Button>
+              </div>
+            </button>
+
+            {isExpanded && (
+              <>
+                <Separator />
+
+                {editError && (
+                  <p className="px-4 py-2 text-sm text-destructive">{editError}</p>
+                )}
+
+                {structure.blind_levels.length === 0 ? (
+                  <p className="px-4 py-4 text-sm text-muted-foreground">Уровней пока нет.</p>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Уровень</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">МБ</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">ББ</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Анте</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Длит.</th>
+                        <th className="px-4 py-2" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {structure.blind_levels.map((lvl) => {
+                        const isEditing = editingId === lvl.id
+                        return (
+                          <tr key={lvl.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
+                            <td className="px-4 py-2 font-medium">{lvl.level_number}</td>
+
+                            {isEditing ? (
+                              <>
+                                <td className="px-2 py-1.5">
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={editForm.small_blind}
+                                    onChange={(e) => setEditForm((f) => ({ ...f, small_blind: e.target.value }))}
+                                    className="h-7 w-20 text-sm"
+                                    disabled={isPending}
+                                  />
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={editForm.big_blind}
+                                    onChange={(e) => setEditForm((f) => ({ ...f, big_blind: e.target.value }))}
+                                    className="h-7 w-20 text-sm"
+                                    disabled={isPending}
+                                  />
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    value={editForm.ante}
+                                    onChange={(e) => setEditForm((f) => ({ ...f, ante: e.target.value }))}
+                                    className="h-7 w-20 text-sm"
+                                    disabled={isPending}
+                                  />
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={editForm.duration_minutes}
+                                    onChange={(e) => setEditForm((f) => ({ ...f, duration_minutes: e.target.value }))}
+                                    className="h-7 w-20 text-sm"
+                                    disabled={isPending}
+                                  />
+                                </td>
+                                <td className="px-2 py-1.5 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Button
+                                      size="sm"
+                                      disabled={isPending}
+                                      onClick={() => handleSaveEdit(lvl)}
+                                    >
+                                      {isPending ? '...' : 'Сохранить'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={isPending}
+                                      onClick={cancelEdit}
+                                    >
+                                      Отмена
+                                    </Button>
+                                  </div>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-4 py-2">{lvl.small_blind}</td>
+                                <td className="px-4 py-2">{lvl.big_blind}</td>
+                                <td className="px-4 py-2">{lvl.ante}</td>
+                                <td className="px-4 py-2">{lvl.duration_minutes} мин</td>
+                                <td className="px-4 py-2 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={isPending}
+                                      onClick={() => startEdit(lvl)}
+                                    >
+                                      Изменить
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-destructive hover:text-destructive"
+                                      disabled={isPending}
+                                      onClick={() => handleDeleteLevel(lvl.id, structure.id)}
+                                    >
+                                      Удалить
+                                    </Button>
+                                  </div>
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </>
+            )}
           </div>
-
-          <Separator />
-
-          {structure.blind_levels.length === 0 ? (
-            <p className="px-4 py-4 text-sm text-muted-foreground">Уровней пока нет.</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Уровень</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">МБ</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">ББ</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Анте</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Длит.</th>
-                  <th className="px-4 py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {structure.blind_levels.map((lvl) => (
-                  <tr key={lvl.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-2 font-medium">{lvl.level_number}</td>
-                    <td className="px-4 py-2">{lvl.small_blind}</td>
-                    <td className="px-4 py-2">{lvl.big_blind}</td>
-                    <td className="px-4 py-2">{lvl.ante}</td>
-                    <td className="px-4 py-2">{lvl.duration_minutes} мин</td>
-                    <td className="px-4 py-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        disabled={isPending}
-                        onClick={() => handleDeleteLevel(lvl.id, structure.id)}
-                      >
-                        Удалить
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      ))}
+        )
+      })}
 
       {/* Create structure dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

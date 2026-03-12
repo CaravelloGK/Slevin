@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { registerPlayer, removePlayerFromTournament, startTournament, setTournamentDealer } from '@/lib/actions/admin'
+import { createBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -22,6 +23,29 @@ export function PlayerRegistration({
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    const supabase = createBrowserClient()
+    const channel = supabase
+      .channel(`admin-registration:${tournament.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_players',
+          filter: `tournament_id=eq.${tournament.id}`,
+        },
+        () => {
+          router.refresh()
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [tournament.id, router])
 
   const registeredIds = new Set(registeredPlayers.map((rp) => rp.player_id))
   const unregistered = allPlayers.filter((p) => !registeredIds.has(p.id))
@@ -123,7 +147,7 @@ export function PlayerRegistration({
                             <Badge variant="secondary">Игрок</Badge>
                           )}
                         </td>
-                        <td className="px-4 py-2">₽{rp.current_bounty}</td>
+                        <td className="px-4 py-2">{rp.current_bounty}<span style={{ fontSize: '0.75em' }}> ₽</span></td>
                         <td className="px-4 py-2">
                           <div className="flex items-center justify-end gap-2">
                             {!isDealer && (

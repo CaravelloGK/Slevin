@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 import { createServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-header'
@@ -65,7 +66,7 @@ export default async function ClubTournamentPage({ params }: Props) {
   const { data: tournament, error } = await supabase
     .from('tournaments')
     .select(
-      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, started_at, finished_at',
+      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, started_at, finished_at, dealer_player_id',
     )
     .eq('id', id)
     .single()
@@ -82,9 +83,11 @@ export default async function ClubTournamentPage({ params }: Props) {
     .eq('tournament_id', id)
     .limit(200)
 
-  const players = (rawPlayers ?? []) as (TournamentPlayerWithProfile & {
+  const allPlayers = (rawPlayers ?? []) as (TournamentPlayerWithProfile & {
     eliminated_at: string | null
   })[]
+  const dealerPlayerId = tournament.dealer_player_id ?? null
+  const players = allPlayers.filter((p) => p.player_id !== dealerPlayerId)
 
   const { data: timerEvents } = await supabase
     .from('tournament_logs')
@@ -193,7 +196,7 @@ export default async function ClubTournamentPage({ params }: Props) {
             <StatCard label="Уровней блайнда" value={String(tournament.current_level)} />
             <StatCard label="Игроков" value={String(players.length)} />
             <StatCard label="Реентри" value={String(totalReentries)} />
-            <StatCard label="Призовой фонд" value={`₽${prizePool.toLocaleString()}`} />
+            <StatCard label="Призовой фонд" value={<>{prizePool.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></>} />
           </div>
         </section>
 
@@ -271,7 +274,7 @@ export default async function ClubTournamentPage({ params }: Props) {
                             fontFamily: 'var(--font-space-mono)',
                           }}
                         >
-                          {prizeAmount > 0 ? `₽${prizeAmount.toLocaleString()}` : '₽0'}
+                          {prizeAmount > 0 ? <>{prizeAmount.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></> : <>0<span style={{ fontSize: '0.65em' }}> ₽</span></>}
                         </td>
                       </tr>
                     )
@@ -313,7 +316,7 @@ export default async function ClubTournamentPage({ params }: Props) {
                   const name = p.player.nickname ?? p.player.name
                   const isWinner = p.status === 'winner'
                   const isActive = p.status === 'active'
-                  const spent = tournament.entry_fee * (p.rebuy_count + 1)
+                  const spent = (tournament.entry_fee + tournament.bounty_amount) * (p.rebuy_count + 1)
                   const pos = isWinner ? 1 : p.final_position
                   const bountyEarned = isWinner
                     ? p.current_bounty + p.guaranteed_bounty
@@ -371,14 +374,14 @@ export default async function ClubTournamentPage({ params }: Props) {
                           fontFamily: 'var(--font-space-mono)',
                         }}
                       >
-                        {bountyEarned > 0 ? `₽${bountyEarned.toLocaleString()}` : '—'}
+                        {bountyEarned > 0 ? <>{bountyEarned.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span></> : '—'}
                       </td>
                       {tournament.entry_fee > 0 && (
                         <td
                           className="px-4 py-3 text-right text-sm"
                           style={{ color: '#8b949e', fontFamily: 'var(--font-space-mono)' }}
                         >
-                          ₽{spent.toLocaleString()}
+                          {spent.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span>
                         </td>
                       )}
                     </tr>
@@ -401,7 +404,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function StatCard({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
     <div
       className="rounded-lg px-4 py-3 flex flex-col gap-0.5"

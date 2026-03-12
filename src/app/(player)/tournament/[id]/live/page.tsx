@@ -27,7 +27,7 @@ export default async function LivePage({ params }: Props) {
   const { data: tournament, error } = await supabase
     .from('tournaments')
     .select(
-      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, created_at, poster_url, blind_level_overrides',
+      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, created_at, poster_url, blind_level_overrides, dealer_player_id',
     )
     .eq('id', id)
     .single()
@@ -63,7 +63,7 @@ export default async function LivePage({ params }: Props) {
     }
   })
 
-  const { data: rawPlayers } = await supabase
+  let livePlayersQuery = supabase
     .from('tournament_players')
     .select(
       `id, registered_at, tournament_id, player_id, seat_number, status, current_bounty,
@@ -73,6 +73,11 @@ export default async function LivePage({ params }: Props) {
     .eq('tournament_id', id)
     .limit(200)
 
+  if (tournament.dealer_player_id) {
+    livePlayersQuery = livePlayersQuery.neq('player_id', tournament.dealer_player_id)
+  }
+
+  const { data: rawPlayers } = await livePlayersQuery
   const players = (rawPlayers ?? []) as TournamentPlayerWithProfile[]
 
   return (

@@ -216,6 +216,46 @@ export async function setTournamentDealer(
   return { success: true, data: null }
 }
 
+// ---- Dealer role reset -------------------------------------------------------
+
+const resetDealerRoleSchema = z.object({
+  tournament_id: z.string().uuid(),
+})
+
+export async function resetDealerRole(
+  input: z.infer<typeof resetDealerRoleSchema>,
+): Promise<ApiResponse<null>> {
+  const parsed = resetDealerRoleSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: 'Invalid input' }
+
+  const { supabase } = await requireAdmin()
+  if (!supabase) return { success: false, error: 'Unauthorized' }
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('dealer_player_id')
+    .eq('id', parsed.data.tournament_id)
+    .single()
+
+  if (!tournament?.dealer_player_id) return { success: true, data: null }
+
+  const { data: dealerPlayer } = await supabase
+    .from('players')
+    .select('user_id')
+    .eq('id', tournament.dealer_player_id)
+    .single()
+
+  if (dealerPlayer?.user_id) {
+    const adminClient = createAdminClient()
+    await adminClient.auth.admin.updateUserById(dealerPlayer.user_id, {
+      user_metadata: { role: 'player' },
+    })
+  }
+
+  revalidatePath('/admin/tournaments')
+  return { success: true, data: null }
+}
+
 // ---- Blind structure actions ------------------------------------------------
 
 const createStructureSchema = z.object({
@@ -225,6 +265,15 @@ const createStructureSchema = z.object({
 const blindLevelSchema = z.object({
   blind_structure_id: z.string().uuid(),
   level_number: z.number().int().min(1),
+  small_blind: z.number().int().min(1),
+  big_blind: z.number().int().min(1),
+  ante: z.number().int().min(0),
+  duration_minutes: z.number().int().min(1),
+})
+
+const updateBlindLevelSchema = z.object({
+  id: z.string().uuid(),
+  blind_structure_id: z.string().uuid(),
   small_blind: z.number().int().min(1),
   big_blind: z.number().int().min(1),
   ante: z.number().int().min(0),
@@ -276,6 +325,32 @@ export async function addBlindLevel(
   })
 
   if (error) return { success: false, error: 'Не удалось добавить уровень' }
+
+  revalidatePath('/admin/structures')
+  return { success: true, data: null }
+}
+
+export async function updateBlindLevel(
+  input: z.infer<typeof updateBlindLevelSchema>,
+): Promise<ApiResponse<null>> {
+  const parsed = updateBlindLevelSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: 'Invalid input' }
+
+  const { supabase } = await requireAdmin()
+  if (!supabase) return { success: false, error: 'Unauthorized' }
+
+  const { error } = await supabase
+    .from('blind_levels')
+    .update({
+      small_blind: parsed.data.small_blind,
+      big_blind: parsed.data.big_blind,
+      ante: parsed.data.ante,
+      duration_minutes: parsed.data.duration_minutes,
+    })
+    .eq('id', parsed.data.id)
+    .eq('blind_structure_id', parsed.data.blind_structure_id)
+
+  if (error) return { success: false, error: 'Не удалось обновить уровень' }
 
   revalidatePath('/admin/structures')
   return { success: true, data: null }

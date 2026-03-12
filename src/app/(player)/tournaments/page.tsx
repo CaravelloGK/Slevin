@@ -42,7 +42,7 @@ export default async function TournamentsPage() {
                 <div>
                   <p className="text-sm font-semibold text-[#e6edf3]">{t.name}</p>
                   <p className="text-xs mt-0.5" style={{ color: '#8b949e' }}>
-                    {t.entry_fee > 0 ? `Взнос: ₽${t.entry_fee.toLocaleString()}` : 'Без взноса'}
+                    {t.entry_fee > 0 ? <>Взнос: {t.entry_fee.toLocaleString()}<span style={{ fontSize: '0.8em' }}> ₽</span></> : 'Без взноса'}
                   </p>
                 </div>
                 <StatusBadge status={t.status} />

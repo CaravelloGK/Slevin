@@ -24,8 +24,12 @@ export function HeaderStrip({
   isOnline,
   players,
 }: HeaderStripProps) {
-  const totalReentries = players.reduce((sum, p) => sum + p.rebuy_count, 0)
-  const prizePool = tournament.entry_fee * (players.length + totalReentries)
+  const dealerPlayerId = tournament.dealer_player_id ?? null
+  const competingPlayers = players.filter((p) => p.player_id !== dealerPlayerId)
+  const totalReentries = competingPlayers.reduce((sum, p) => sum + p.rebuy_count, 0)
+  const entries = competingPlayers.length + totalReentries
+  const prizePool = tournament.entry_fee * entries
+  const bountyBank = tournament.bounty_amount * entries
 
   return (
     <header
@@ -81,7 +85,23 @@ export function HeaderStrip({
               className="text-sm font-bold text-[#d4af37]"
               style={{ fontFamily: 'var(--font-space-mono)' }}
             >
-              ₽{prizePool.toLocaleString()}
+              {prizePool.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span>
+            </span>
+          </div>
+        )}
+        {bountyBank > 0 && (
+          <div className="flex flex-col items-end leading-none">
+            <span
+              className="text-[9px] tracking-[0.2em] uppercase"
+              style={{ fontFamily: 'var(--font-barlow)', color: '#7f1d1d' }}
+            >
+              Банк баунти
+            </span>
+            <span
+              className="text-sm font-bold"
+              style={{ fontFamily: 'var(--font-space-mono)', color: '#ef4444' }}
+            >
+              {bountyBank.toLocaleString()}<span style={{ fontSize: '0.65em' }}> ₽</span>
             </span>
           </div>
         )}

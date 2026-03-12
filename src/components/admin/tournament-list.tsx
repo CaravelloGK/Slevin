@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition, useRef } from 'react'
-import { createTournament, updateTournamentPoster } from '@/lib/actions/admin'
+import { createTournament, updateTournamentPoster, resetDealerRole } from '@/lib/actions/admin'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -197,7 +197,7 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
             {tournaments.map((t) => (
               <tr key={t.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="px-4 py-3 font-medium">{t.name}</td>
-                <td className="px-4 py-3">₽{t.bounty_amount}</td>
+                <td className="px-4 py-3">{t.bounty_amount}<span style={{ fontSize: '0.75em' }}> ₽</span></td>
                 <td className="px-4 py-3">
                   <Badge variant={STATUS_VARIANT[t.status]}>{STATUS_LABELS[t.status]}</Badge>
                 </td>
@@ -216,9 +216,26 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
                     </Button>
                   )}
                   {t.status === 'finished' && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`/club/${t.id}`}>Статистика</a>
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      {t.dealer_player_id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground"
+                          disabled={isPending}
+                          onClick={() => {
+                            startTransition(async () => {
+                              await resetDealerRole({ tournament_id: t.id })
+                            })
+                          }}
+                        >
+                          Сбросить дилера
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={`/club/${t.id}`}>Статистика</a>
+                      </Button>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -292,11 +309,13 @@ export function TournamentList({ tournaments, structures }: TournamentListProps)
                 onClick={() => posterInputRef.current?.click()}
               >
                 {posterPreview ? (
-                  <img
-                    src={posterPreview}
-                    alt="Постер"
-                    className="w-full max-h-40 object-contain rounded"
-                  />
+                  <div className="h-24 w-full flex items-center justify-center">
+                    <img
+                      src={posterPreview}
+                      alt="Постер"
+                      className="h-full w-auto max-w-full object-contain rounded"
+                    />
+                  </div>
                 ) : (
                   <div className="flex flex-col items-center gap-1 text-muted-foreground">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

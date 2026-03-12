@@ -23,7 +23,7 @@ export default async function DealerPanelPage({ params }: Props) {
   const { data: tournament, error: tournamentError } = await supabase
     .from('tournaments')
     .select(
-      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, created_at, poster_url, blind_level_overrides',
+      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, created_at, poster_url, blind_level_overrides, dealer_player_id',
     )
     .eq('id', id)
     .single()
@@ -54,8 +54,8 @@ export default async function DealerPanelPage({ params }: Props) {
     }
   })
 
-  // Fetch tournament players with player profile
-  const { data: rawPlayers } = await supabase
+  // Fetch tournament players with player profile (exclude dealer)
+  let playersQuery = supabase
     .from('tournament_players')
     .select(
       `id, registered_at, tournament_id, player_id, seat_number, status, current_bounty,
@@ -66,6 +66,11 @@ export default async function DealerPanelPage({ params }: Props) {
     .order('seat_number', { ascending: true })
     .limit(100)
 
+  if (tournament.dealer_player_id) {
+    playersQuery = playersQuery.neq('player_id', tournament.dealer_player_id)
+  }
+
+  const { data: rawPlayers } = await playersQuery
   const players = (rawPlayers ?? []) as TournamentPlayerWithProfile[]
 
   return (
