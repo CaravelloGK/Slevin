@@ -112,6 +112,7 @@ export type Database = {
           current_bounty: number
           guaranteed_bounty: number
           rebuy_count: number
+          kills_count: number
           eliminated_at: string | null
           final_position: number | null
         }
@@ -125,6 +126,7 @@ export type Database = {
           current_bounty: number
           guaranteed_bounty?: number
           rebuy_count?: number
+          kills_count?: number
           eliminated_at?: string | null
           final_position?: number | null
         }
@@ -138,6 +140,7 @@ export type Database = {
           current_bounty?: number
           guaranteed_bounty?: number
           rebuy_count?: number
+          kills_count?: number
           eliminated_at?: string | null
           final_position?: number | null
         }

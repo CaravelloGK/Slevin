@@ -135,6 +135,20 @@ export function SpectatorPanel({
               className="text-[9px] tracking-[0.2em] text-[#484f58] uppercase"
               style={{ fontFamily: 'var(--font-barlow)' }}
             >
+              Турнир
+            </span>
+            <span
+              className="text-sm font-semibold text-[#8b949e] max-w-[140px] truncate"
+              style={{ fontFamily: 'var(--font-barlow)' }}
+            >
+              {tournament.name}
+            </span>
+          </div>
+          <div className="flex flex-col items-end leading-none">
+            <span
+              className="text-[9px] tracking-[0.2em] text-[#484f58] uppercase"
+              style={{ fontFamily: 'var(--font-barlow)' }}
+            >
               Игроков
             </span>
             <span

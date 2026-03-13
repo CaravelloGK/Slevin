@@ -67,7 +67,7 @@ export default async function LivePage({ params }: Props) {
     .from('tournament_players')
     .select(
       `id, registered_at, tournament_id, player_id, seat_number, status, current_bounty,
-       guaranteed_bounty, rebuy_count, eliminated_at, final_position,
+       guaranteed_bounty, rebuy_count, kills_count, eliminated_at, final_position,
        player:players(id, created_at, name, nickname, avatar_url, user_id)`,
     )
     .eq('tournament_id', id)

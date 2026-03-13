@@ -8,3 +8,6 @@
 2026-03-10-11:53 | phase-5-main-menu | 34e4511
 2026-03-10-13:18 | phase-5-complete | 0e383bf
 2026-03-10-14:44 | phase-6-complete | db0b849
+2026-03-13-02:56 | phase-7-fixes | 9995204
+2026-03-13-03:08 | phase-3-complete | c960f74 | offline safety: replay-queue, offline banner, sync toast — 35/35 tests
+2026-03-13-03:11 | build-fix-bounty-prop | ecf3970

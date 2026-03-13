@@ -3,6 +3,7 @@
 interface ActionBarProps {
   tournamentId: string
   isPaused: boolean
+  isMuted: boolean
   activePlayers: number
   totalPlayers: number
   currentLevel: number
@@ -12,10 +13,12 @@ interface ActionBarProps {
   onPrevLevel: () => void
   onNextLevel: () => void
   onEndTournament: () => void
+  onToggleMute: () => void
 }
 
 export function ActionBar({
   isPaused,
+  isMuted,
   activePlayers,
   totalPlayers,
   currentLevel,
@@ -25,6 +28,7 @@ export function ActionBar({
   onPrevLevel,
   onNextLevel,
   onEndTournament,
+  onToggleMute,
 }: ActionBarProps) {
   return (
     <footer
@@ -99,8 +103,21 @@ export function ActionBar({
         </span>
       </div>
 
-      {/* Right: end tournament + status */}
+      {/* Right: mute + end tournament + status */}
       <div className="flex items-center gap-3">
+        <button
+          onClick={onToggleMute}
+          className="px-3 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all duration-150 active:scale-95"
+          style={{
+            background: isMuted ? '#1a0505' : '#21262d',
+            color: isMuted ? '#ef4444' : '#8b949e',
+            border: `1px solid ${isMuted ? '#7f1d1d' : '#30363d'}`,
+            fontFamily: 'var(--font-barlow)',
+          }}
+        >
+          {isMuted ? 'Звук выкл' : 'Звук вкл'}
+        </button>
+        <div className="w-px h-5 bg-[#30363d]" />
         <button
           onClick={onEndTournament}
           className="px-3 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all duration-150 active:scale-95"

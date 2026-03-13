@@ -1,10 +1,14 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useBlindTimer } from '@/hooks/use-blind-timer'
 import { useTournamentRealtime } from '@/hooks/use-tournament-realtime'
 import { useOfflineQueue } from '@/hooks/use-offline-queue'
+import { useAudioQueue } from '@/hooks/use-audio-queue'
+import { useAudioMute } from '@/hooks/use-audio-mute'
+import { useAnnouncements } from '@/hooks/use-announcements'
+import { AUDIO, levelAudioFile } from '@/lib/audio/manifest'
 import { recordKnockout, recordRebuy, pauseTimer, resumeTimer, advanceLevel, endTournament } from '@/lib/actions/tournament'
 import { HeaderStrip } from './header-strip'
 import { ActionBar } from './action-bar'
@@ -102,10 +106,6 @@ export function DealerPanel({
     await advanceLevel({ tournament_id: tournament.id, direction: 'prev' })
   }, [tournament.id])
 
-  const handleNextLevel = useCallback(async () => {
-    await advanceLevel({ tournament_id: tournament.id, direction: 'next' })
-  }, [tournament.id])
-
   // Called by the timer hook when it hits 00:00 — shows a prompt instead of auto-advancing
   const handleTimerExpired = useCallback(() => {
     setLevelUpPromptOpen(true)
@@ -128,6 +128,42 @@ export function DealerPanel({
     onAutoAdvance: handleTimerExpired,
   })
 
+  const activePlayers = players.filter((p) => p.status === 'active').length
+
+  // Audio system
+  const { enqueue: audioEnqueue, clear: audioClear, whenEmpty: audioWhenEmpty } = useAudioQueue()
+  const { isMuted, toggleMute } = useAudioMute(tournament.id)
+
+  // Stop playback immediately when muted
+  useEffect(() => {
+    if (isMuted) audioClear()
+  }, [isMuted, audioClear])
+
+  useAnnouncements({
+    secondsLeft,
+    currentLevel,
+    activePlayers,
+    tournamentStartedAt: tournament.started_at,
+    isRunning: tournament.status === 'running',
+    isMuted,
+    enqueue: audioEnqueue,
+  })
+
+  const handleNextLevel = useCallback(async () => {
+    if (!isMuted) {
+      const nextNum = tournament.current_level + 1
+      const nextLvl = localBlindLevels.find((l) => l.level_number === nextNum)
+      if (nextLvl) {
+        audioEnqueue(levelAudioFile(nextNum))
+        if (nextLvl.small_blind === 50 && nextLvl.big_blind === 100) {
+          audioEnqueue(AUDIO.CHIP_UP)
+        }
+        await audioWhenEmpty()
+      }
+    }
+    await advanceLevel({ tournament_id: tournament.id, direction: 'next' })
+  }, [tournament.id, tournament.current_level, localBlindLevels, isMuted, audioEnqueue, audioWhenEmpty])
+
   // Realtime subscription
   useTournamentRealtime({
     tournamentId: tournament.id,
@@ -135,8 +171,6 @@ export function DealerPanel({
     onTournamentChange: setTournament,
     onConnectionChange: setRealtimeConnected,
   })
-
-  const activePlayers = players.filter((p) => p.status === 'active').length
 
   // ---- Render -----------------------------------------------------------------
 
@@ -252,6 +286,7 @@ export function DealerPanel({
       <ActionBar
         tournamentId={tournament.id}
         isPaused={isPaused}
+        isMuted={isMuted}
         activePlayers={activePlayers}
         totalPlayers={players.length}
         currentLevel={tournament.current_level}
@@ -261,6 +296,7 @@ export function DealerPanel({
         onPrevLevel={handlePrevLevel}
         onNextLevel={handleNextLevel}
         onEndTournament={() => setEndConfirmOpen(true)}
+        onToggleMute={toggleMute}
       />
 
       {/* Modals */}
