@@ -82,8 +82,47 @@ export function SpectatorPlayerCard({ entry, entryFee, bountyAmount }: Spectator
           </span>
         </div>
 
-        {/* Right: badges + financials */}
-        <div className="flex items-center gap-1.5">
+        {/* Right: spent + kills + eliminated badge */}
+        <div className="flex items-center gap-2">
+          {(entryFee > 0 || bountyAmount > 0) && (
+            <div className="flex items-center gap-3">
+<div className="flex flex-col items-end leading-none">
+                <span
+                  className="text-[9px] tracking-[0.15em] text-[#484f58] uppercase"
+                  style={{ fontFamily: 'var(--font-barlow)' }}
+                >
+                  Потрачено
+                </span>
+                <span
+                  className="text-[11px] font-semibold text-[#8b949e]"
+                  style={{ fontFamily: 'var(--font-space-mono)' }}
+                >
+                  {((entryFee + bountyAmount) * (entry.rebuy_count + 1)).toLocaleString()}
+                  <span style={{ fontSize: '0.75em' }}> ₽</span>
+                </span>
+              </div>
+              <div className="flex flex-col items-end leading-none">
+                <span
+                  className="text-[9px] tracking-[0.15em] text-[#484f58] uppercase"
+                  style={{ fontFamily: 'var(--font-barlow)' }}
+                >
+                  Выбито
+                </span>
+                <div className="flex items-center gap-0.5">
+                  <span
+                    className="text-[11px] font-bold"
+                    style={{
+                      fontFamily: 'var(--font-space-mono)',
+                      color: entry.kills_count > 0 ? '#da3633' : '#484f58',
+                    }}
+                  >
+                    {entry.kills_count}×
+                  </span>
+                  <Crosshair size={11} style={{ color: entry.kills_count > 0 ? '#da3633' : '#484f58' }} />
+                </div>
+              </div>
+            </div>
+          )}
           {isEliminated && (
             <span
               className="text-[10px] font-bold tracking-widest px-1.5 py-0.5 rounded"
@@ -92,59 +131,50 @@ export function SpectatorPlayerCard({ entry, entryFee, bountyAmount }: Spectator
               ВЫБЫЛ
             </span>
           )}
+        </div>
+      </div>
+
+      {/* Player name */}
+      <div className="px-3 pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <span
+              className="text-base font-bold leading-tight"
+              style={{
+                fontFamily: 'var(--font-barlow)',
+                color: isEliminated ? '#484f58' : '#e6edf3',
+                textDecoration: isEliminated ? 'line-through' : 'none',
+                textDecorationColor: '#484f58',
+              }}
+            >
+              {displayName.toUpperCase()}
+            </span>
+            {isWinner && (
+              <span
+                className="text-[10px] font-bold tracking-widest px-1.5 py-0.5 rounded"
+                style={{ background: '#3d2e00', color: '#d4af37', fontFamily: 'var(--font-barlow)' }}
+              >
+                ПОБЕДИТЕЛЬ
+              </span>
+            )}
+          </div>
           {(entryFee > 0 || bountyAmount > 0) && (
-            <div className="flex flex-col items-end gap-0.5">
-              {entry.rebuy_count > 0 && (
-                <span
-                  className="text-[10px] font-semibold tracking-wider text-[#8b949e]"
-                  style={{ fontFamily: 'var(--font-barlow)' }}
-                >
-                  R×{entry.rebuy_count}{' '}
-                  <span style={{ color: '#6e7681' }}>
-                    ({((entryFee + bountyAmount) * (entry.rebuy_count + 1)).toLocaleString()}₽)
-                  </span>
-                </span>
-              )}
+            <div className="flex flex-col items-end gap-0.5 shrink-0">
               <span
                 className="flex items-center gap-1 text-[10px]"
                 style={{ fontFamily: 'var(--font-space-mono)' }}
               >
                 <Ticket size={9} style={{ color: '#6e7681', flexShrink: 0 }} />
                 <span style={{ color: '#6e7681' }}>
-                    {(entryFee * (entry.rebuy_count + 1)).toLocaleString()}<span style={{ fontSize: 7 }}> ₽</span>
+                  {(entryFee * (entry.rebuy_count + 1)).toLocaleString()}<span style={{ fontSize: 7 }}> ₽</span>
                 </span>
                 <span style={{ color: '#30363d' }}>/</span>
                 <Crosshair size={9} style={{ color: '#7f1d1d', flexShrink: 0 }} />
                 <span style={{ color: '#ef4444' }}>
-                    {(bountyAmount * (entry.rebuy_count + 1)).toLocaleString()}<span style={{ fontSize: 7 }}> ₽</span>
+                  {(bountyAmount * (entry.rebuy_count + 1)).toLocaleString()}<span style={{ fontSize: 7 }}> ₽</span>
                 </span>
               </span>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Player name */}
-      <div className="px-3 pb-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span
-            className="text-base font-bold leading-tight"
-            style={{
-              fontFamily: 'var(--font-barlow)',
-              color: isEliminated ? '#484f58' : '#e6edf3',
-              textDecoration: isEliminated ? 'line-through' : 'none',
-              textDecorationColor: '#484f58',
-            }}
-          >
-            {displayName.toUpperCase()}
-          </span>
-          {isWinner && (
-            <span
-              className="text-[10px] font-bold tracking-widest px-1.5 py-0.5 rounded"
-              style={{ background: '#3d2e00', color: '#d4af37', fontFamily: 'var(--font-barlow)' }}
-            >
-              ПОБЕДИТЕЛЬ
-            </span>
           )}
         </div>
         {entry.player.nickname && (

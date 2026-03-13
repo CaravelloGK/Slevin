@@ -264,7 +264,7 @@ export function DealerPanel({
         <div
           className="grid gap-3 h-full"
           style={{
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            gridTemplateColumns: 'repeat(3, 1fr)',
             alignContent: 'start',
           }}
         >

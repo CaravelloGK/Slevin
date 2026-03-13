@@ -143,14 +143,14 @@ export function PlayerCard({
         {/* Right: spent + kills + eliminated badge + edit button */}
         <div className="flex items-center gap-2">
           {(entryFee > 0 || bountyAmount > 0) && (
-            <div className="flex flex-col items-end leading-none">
-              <span
-                className="text-[9px] tracking-[0.15em] text-[#484f58] uppercase"
-                style={{ fontFamily: 'var(--font-barlow)' }}
-              >
-                Потрачено / Выбито
-              </span>
-              <div className="flex items-center gap-1">
+            <div className="flex items-center gap-3">
+<div className="flex flex-col items-end leading-none">
+                <span
+                  className="text-[9px] tracking-[0.15em] text-[#484f58] uppercase"
+                  style={{ fontFamily: 'var(--font-barlow)' }}
+                >
+                  Потрачено
+                </span>
                 <span
                   className="text-[11px] font-semibold text-[#8b949e]"
                   style={{ fontFamily: 'var(--font-space-mono)' }}
@@ -158,17 +158,26 @@ export function PlayerCard({
                   {((entryFee + bountyAmount) * (entry.rebuy_count + 1)).toLocaleString()}
                   <span style={{ fontSize: '0.75em' }}> ₽</span>
                 </span>
-                <span style={{ color: '#30363d', fontSize: '11px' }}>/</span>
+              </div>
+              <div className="flex flex-col items-end leading-none">
                 <span
-                  className="text-[11px] font-bold"
-                  style={{
-                    fontFamily: 'var(--font-space-mono)',
-                    color: entry.kills_count > 0 ? '#da3633' : '#484f58',
-                  }}
+                  className="text-[9px] tracking-[0.15em] text-[#484f58] uppercase"
+                  style={{ fontFamily: 'var(--font-barlow)' }}
                 >
-                  {entry.kills_count}×
+                  Выбито
                 </span>
-                <Crosshair size={11} style={{ color: entry.kills_count > 0 ? '#da3633' : '#484f58' }} />
+                <div className="flex items-center gap-0.5">
+                  <span
+                    className="text-[11px] font-bold"
+                    style={{
+                      fontFamily: 'var(--font-space-mono)',
+                      color: entry.kills_count > 0 ? '#da3633' : '#484f58',
+                    }}
+                  >
+                    {entry.kills_count}×
+                  </span>
+                  <Crosshair size={11} style={{ color: entry.kills_count > 0 ? '#da3633' : '#484f58' }} />
+                </div>
               </div>
             </div>
           )}
@@ -235,17 +244,6 @@ export function PlayerCard({
           </div>
           {(entryFee > 0 || bountyAmount > 0) && (
             <div className="flex flex-col items-end gap-0.5 shrink-0">
-              {entry.rebuy_count > 0 && (
-                <span
-                  className="text-[10px] font-semibold tracking-wider text-[#8b949e]"
-                  style={{ fontFamily: 'var(--font-barlow)' }}
-                >
-                  R×{entry.rebuy_count}{' '}
-                  <span style={{ color: '#6e7681' }}>
-                    ({((entryFee + bountyAmount) * (entry.rebuy_count + 1)).toLocaleString()}₽)
-                  </span>
-                </span>
-              )}
               <span
                 className="flex items-center gap-1 text-[10px]"
                 style={{ fontFamily: 'var(--font-space-mono)' }}
