@@ -92,6 +92,7 @@ export function KnockoutDialog({
                   <PlayerCard
                     entry={killer}
                     entryFee={entryFee}
+                    bountyAmount={bountyAmount}
                     onKnockout={() => {}}
                     onRebuy={() => {}}
                     isSelectingKiller
