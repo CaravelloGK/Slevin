@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { replayOfflineQueue } from '@/lib/offline/replay-queue'
 
 interface QueuedMutation {
   id: string
@@ -104,23 +106,22 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
     let cancelled = false
 
     async function replay() {
-      const queue = await getAllQueued()
-      for (const mutation of queue) {
-        if (cancelled) break
-        try {
-          // Dispatch via fetch to the appropriate API route
-          const res = await fetch(`/api/offline-replay`, {
+      const { synced } = await replayOfflineQueue({
+        getAllQueued,
+        removeFromQueue,
+        post: (mutation) =>
+          fetch('/api/offline-replay', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(mutation),
-          })
-          if (res.ok) {
-            await removeFromQueue(mutation.id)
-          }
-        } catch {
-          break // Network still unstable — stop, will retry on next reconnect
-        }
+          }),
+        isCancelled: () => cancelled,
+      })
+
+      if (synced > 0) {
+        toast.success(`Синхронизировано: ${synced} ${synced === 1 ? 'действие' : 'действия'}`)
       }
+
       const remaining = await getAllQueued()
       setPendingCount(remaining.length)
     }

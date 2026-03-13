@@ -168,6 +168,36 @@ export function DealerPanel({
         players={players}
       />
 
+      {/* Offline banner */}
+      {!isOnline && (
+        <div
+          className="px-5 py-2 flex items-center justify-between shrink-0"
+          style={{ background: '#1a0505', borderBottom: '1px solid #7f1d1d' }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-[#ef4444] animate-pulse shrink-0" />
+            <span
+              className="text-sm font-bold tracking-[0.08em] text-[#ef4444] uppercase"
+              style={{ fontFamily: 'var(--font-barlow)' }}
+            >
+              Нет подключения — действия сохраняются в очередь
+            </span>
+          </div>
+          {pendingCount > 0 && (
+            <span
+              className="text-xs font-semibold px-2 py-0.5 rounded shrink-0"
+              style={{
+                background: '#3d0a0a',
+                color: '#ef4444',
+                fontFamily: 'var(--font-space-mono)',
+              }}
+            >
+              {pendingCount} в очереди
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Finished banner */}
       {tournament.status === 'finished' && (
         <div
