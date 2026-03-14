@@ -23,8 +23,8 @@ export function AvatarUpload({ userId, currentAvatarUrl, playerName }: Props) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Максимальный размер файла — 2MB')
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Максимальный размер файла — 20MB')
       return
     }
 
@@ -98,7 +98,7 @@ export function AvatarUpload({ userId, currentAvatarUrl, playerName }: Props) {
           >
             {uploading ? 'Загрузка...' : 'Изменить фото'}
           </button>
-          <p className="text-[11px] text-[#484f58]">JPEG, PNG или WEBP, до 2MB</p>
+          <p className="text-[11px] text-[#484f58]">JPEG, PNG или WEBP, до 20MB</p>
         </div>
       </div>
 
