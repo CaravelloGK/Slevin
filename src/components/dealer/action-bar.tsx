@@ -1,5 +1,7 @@
 'use client'
 
+import { HelpMenu } from './help-menu'
+
 interface ActionBarProps {
   tournamentId: string
   isPaused: boolean
@@ -139,6 +141,8 @@ export function ActionBar({
         >
           {isPaused ? '⏸ Пауза' : '● Идёт'}
         </div>
+        <div className="w-px h-5 bg-[#30363d]" />
+        <HelpMenu />
       </div>
     </footer>
   )

@@ -26,7 +26,7 @@ export default async function HomePage() {
   const { data: activeTournament } = await supabase
     .from('tournaments')
     .select('id, name')
-    .eq('status', 'running')
+    .in('status', ['running', 'paused'])
     .limit(1)
     .maybeSingle()
 

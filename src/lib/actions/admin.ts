@@ -486,7 +486,7 @@ export async function startTournament(
   const now = new Date().toISOString()
   const { error } = await supabase
     .from('tournaments')
-    .update({ status: 'running', level_started_at: now, started_at: now })
+    .update({ status: 'paused', level_started_at: now, started_at: now })
     .eq('id', parsed.data.tournament_id)
 
   if (error) return { success: false, error: 'Failed to start tournament' }

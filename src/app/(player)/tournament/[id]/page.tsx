@@ -61,7 +61,7 @@ export default async function TournamentLobbyPage({ params }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#0d1117' }}>
-      <TournamentLobbyRealtime tournamentId={id} />
+      <TournamentLobbyRealtime tournamentId={id} role={role} />
       <AppHeader role={role} />
       <main className="flex-1 px-6 py-8 max-w-lg mx-auto w-full">
         {/* Header */}

@@ -6,9 +6,10 @@ import { createBrowserClient } from '@/lib/supabase/client'
 
 interface Props {
   tournamentId: string
+  role?: string
 }
 
-export function TournamentLobbyRealtime({ tournamentId }: Props) {
+export function TournamentLobbyRealtime({ tournamentId, role }: Props) {
   const router = useRouter()
 
   useEffect(() => {
@@ -27,12 +28,31 @@ export function TournamentLobbyRealtime({ tournamentId }: Props) {
           router.refresh()
         },
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tournaments',
+          filter: `id=eq.${tournamentId}`,
+        },
+        (payload) => {
+          const newStatus = (payload.new as { status?: string }).status
+          if (newStatus === 'running' || newStatus === 'paused') {
+            if (role === 'dealer') {
+              router.push(`/tournament/${tournamentId}/dealer`)
+            } else {
+              router.push(`/tournament/${tournamentId}/live`)
+            }
+          }
+        },
+      )
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [tournamentId, router])
+  }, [tournamentId, role, router])
 
   return null
 }
