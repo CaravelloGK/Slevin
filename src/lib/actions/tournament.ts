@@ -201,30 +201,11 @@ export async function pauseTimer(
 
   const db = createServiceClient()
 
-  // Build update: always set status=paused.
-  // If seconds_remaining is provided, shift level_started_at so the frozen
-  // time survives a page refresh (computeSecondsLeft will return the same value).
-  const update: Record<string, unknown> = { status: 'paused' }
-  if (parsed.data.seconds_remaining !== undefined) {
-    const { data: levelData } = await db
-      .from('tournaments')
-      .select('current_level, blind_structure_id')
-      .eq('id', parsed.data.tournament_id)
-      .single()
-
-    if (levelData) {
-      const { data: level } = await db
-        .from('blind_levels')
-        .select('duration_minutes')
-        .eq('blind_structure_id', levelData.blind_structure_id)
-        .eq('level_number', levelData.current_level)
-        .single()
-
-      if (level) {
-        const elapsed = level.duration_minutes * 60 - parsed.data.seconds_remaining
-        update.level_started_at = new Date(Date.now() - elapsed * 1000).toISOString()
-      }
-    }
+  // Store exact seconds remaining at pause time so the client can read it
+  // directly on page refresh — avoids drift caused by wall-clock advancing while paused.
+  const update: Record<string, unknown> = {
+    status: 'paused',
+    paused_seconds_remaining: parsed.data.seconds_remaining ?? null,
   }
 
   const { error } = await db
@@ -256,16 +237,20 @@ export async function resumeTimer(
 
   const db = createServiceClient()
 
-  // Calculate effective level_started_at accounting for paused time
+  // Read the frozen seconds from the DB (set at pause time) so the resumed
+  // level_started_at is authoritative and not subject to client clock drift.
   let levelStartedAt = new Date().toISOString()
-  if (parsed.data.seconds_remaining !== undefined) {
-    const { data: tournament } = await db
-      .from('tournaments')
-      .select('current_level, blind_structure_id')
-      .eq('id', parsed.data.tournament_id)
-      .single()
+  const { data: tournament } = await db
+    .from('tournaments')
+    .select('current_level, blind_structure_id, paused_seconds_remaining')
+    .eq('id', parsed.data.tournament_id)
+    .single()
 
-    if (tournament) {
+  if (tournament) {
+    const secondsRemaining =
+      tournament.paused_seconds_remaining ?? parsed.data.seconds_remaining
+
+    if (secondsRemaining !== undefined && secondsRemaining !== null) {
       const { data: level } = await db
         .from('blind_levels')
         .select('duration_minutes')
@@ -274,16 +259,15 @@ export async function resumeTimer(
         .single()
 
       if (level) {
-        const elapsed = level.duration_minutes * 60 - parsed.data.seconds_remaining
-        const effectiveStart = new Date(Date.now() - elapsed * 1000)
-        levelStartedAt = effectiveStart.toISOString()
+        const elapsed = level.duration_minutes * 60 - secondsRemaining
+        levelStartedAt = new Date(Date.now() - elapsed * 1000).toISOString()
       }
     }
   }
 
   const { error } = await db
     .from('tournaments')
-    .update({ status: 'running', level_started_at: levelStartedAt })
+    .update({ status: 'running', level_started_at: levelStartedAt, paused_seconds_remaining: null })
     .eq('id', parsed.data.tournament_id)
 
   if (error) return { success: false, error: 'Failed to resume' }

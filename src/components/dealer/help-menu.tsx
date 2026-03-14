@@ -2,6 +2,47 @@
 
 import { useState, useRef, useEffect } from 'react'
 
+// ─── Chip count data ──────────────────────────────────────────────────────────
+
+const CHIP_DATA: Record<number, { denom: number; perPlayer: number }[]> = {
+  6: [
+    { denom: 1,   perPlayer: 13 },
+    { denom: 5,   perPlayer: 16 },
+    { denom: 25,  perPlayer: 15 },
+    { denom: 50,  perPlayer: 10 },
+    { denom: 100, perPlayer: 6  },
+  ],
+  7: [
+    { denom: 1,   perPlayer: 14 },
+    { denom: 5,   perPlayer: 16 },
+    { denom: 25,  perPlayer: 10 },
+    { denom: 50,  perPlayer: 10 },
+    { denom: 100, perPlayer: 5  },
+  ],
+  8: [
+    { denom: 1,   perPlayer: 11 },
+    { denom: 5,   perPlayer: 13 },
+    { denom: 25,  perPlayer: 12 },
+    { denom: 50,  perPlayer: 8  },
+    { denom: 100, perPlayer: 4  },
+  ],
+  9: [
+    { denom: 1,   perPlayer: 10 },
+    { denom: 5,   perPlayer: 12 },
+    { denom: 25,  perPlayer: 9  },
+    { denom: 50,  perPlayer: 7  },
+    { denom: 100, perPlayer: 4  },
+  ],
+}
+
+const CHIP_COLORS: Record<number, string> = {
+  1:   '#e6edf3',
+  5:   '#61afef',
+  25:  '#98c379',
+  50:  '#e5c07b',
+  100: '#e06c75',
+}
+
 // ─── Poker hands data ────────────────────────────────────────────────────────
 
 const POKER_HANDS = [
@@ -200,6 +241,11 @@ function PokerHandsModal({ onClose }: { onClose: () => void }) {
 // ─── Chip Count Modal ────────────────────────────────────────────────────────
 
 function ChipCountModal({ onClose }: { onClose: () => void }) {
+  const [players, setPlayers] = useState(6)
+  const tabs = [6, 7, 8, 9]
+  const rows = CHIP_DATA[players]
+  const stackValue = rows.reduce((sum, r) => sum + r.denom * r.perPlayer, 0)
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
@@ -211,7 +257,7 @@ function ChipCountModal({ onClose }: { onClose: () => void }) {
         style={{
           background: '#161b22',
           border: '1px solid #30363d',
-          width: 'min(92vw, 500px)',
+          width: 'min(92vw, 420px)',
           maxHeight: '85vh',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -229,7 +275,7 @@ function ChipCountModal({ onClose }: { onClose: () => void }) {
               Чип-каунт
             </p>
             <p className="text-[10px] text-[#484f58] uppercase tracking-widest" style={{ fontFamily: 'var(--font-barlow)' }}>
-              раздача фишек по игрокам
+              раздача фишек · 2 докупа
             </p>
           </div>
           <button
@@ -240,18 +286,94 @@ function ChipCountModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* Placeholder */}
-        <div className="flex-1 flex items-center justify-center px-8 py-12">
-          <div className="text-center">
-            <div
-              className="text-4xl mb-4"
-              style={{ color: '#30363d' }}
+        {/* Tabs */}
+        <div
+          className="flex shrink-0 px-4 pt-3 gap-1.5"
+        >
+          {tabs.map((n) => (
+            <button
+              key={n}
+              onClick={() => setPlayers(n)}
+              className="flex-1 py-1.5 rounded-md text-xs font-bold uppercase tracking-widest transition-colors"
+              style={{
+                fontFamily: 'var(--font-barlow)',
+                background: players === n ? '#21262d' : 'transparent',
+                color: players === n ? '#e6edf3' : '#484f58',
+                border: `1px solid ${players === n ? '#30363d' : 'transparent'}`,
+              }}
             >
-              ◈
+              {n} игр.
+            </button>
+          ))}
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-1.5">
+          {/* Column headers */}
+          <div
+            className="grid grid-cols-3 px-3 mb-1"
+            style={{ fontFamily: 'var(--font-barlow)' }}
+          >
+            <span className="text-[10px] uppercase tracking-widest text-[#484f58]">Фишка</span>
+            <span className="text-[10px] uppercase tracking-widest text-[#484f58] text-center">На игрока</span>
+            <span className="text-[10px] uppercase tracking-widest text-[#484f58] text-right">Стоимость</span>
+          </div>
+
+          {rows.map((row) => (
+            <div
+              key={row.denom}
+              className="grid grid-cols-3 items-center px-3 py-2.5 rounded-lg"
+              style={{ background: '#0d1117', border: '1px solid #21262d' }}
+            >
+              {/* Denomination with color dot */}
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ background: CHIP_COLORS[row.denom] }}
+                />
+                <span
+                  className="text-sm font-bold tabular-nums"
+                  style={{ color: CHIP_COLORS[row.denom], fontFamily: 'var(--font-space-mono)' }}
+                >
+                  {row.denom}
+                </span>
+              </div>
+
+              {/* Per player */}
+              <span
+                className="text-sm font-bold text-[#e6edf3] tabular-nums text-center"
+                style={{ fontFamily: 'var(--font-space-mono)' }}
+              >
+                {row.perPlayer}
+              </span>
+
+              {/* Value */}
+              <span
+                className="text-sm tabular-nums text-[#8b949e] text-right"
+                style={{ fontFamily: 'var(--font-space-mono)' }}
+              >
+                {row.denom * row.perPlayer}
+              </span>
             </div>
-            <p className="text-sm text-[#484f58]" style={{ fontFamily: 'var(--font-barlow)' }}>
-              Информация о раздаче фишек появится здесь
-            </p>
+          ))}
+
+          {/* Stack total */}
+          <div
+            className="flex items-center justify-between px-3 py-2 mt-1 rounded-lg"
+            style={{ background: '#21262d', border: '1px solid #30363d' }}
+          >
+            <span
+              className="text-[10px] uppercase tracking-widest text-[#8b949e]"
+              style={{ fontFamily: 'var(--font-barlow)' }}
+            >
+              Стек
+            </span>
+            <span
+              className="text-sm font-bold text-[#e6edf3] tabular-nums"
+              style={{ fontFamily: 'var(--font-space-mono)' }}
+            >
+              {stackValue.toLocaleString('ru-RU')}
+            </span>
           </div>
         </div>
       </div>

@@ -27,7 +27,7 @@ export default async function LivePage({ params }: Props) {
   const { data: tournament, error } = await supabase
     .from('tournaments')
     .select(
-      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, created_at, poster_url, blind_level_overrides, dealer_player_id',
+      'id, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, paused_seconds_remaining, started_at, finished_at, blind_structure_id, created_at, poster_url, blind_level_overrides, dealer_player_id',
     )
     .eq('id', id)
     .single()

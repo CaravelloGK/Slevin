@@ -18,7 +18,7 @@ export default async function RegisterPlayersPage({ params }: Props) {
   ] = await Promise.all([
     supabase
       .from('tournaments')
-      .select('id, created_at, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, started_at, finished_at, blind_structure_id, poster_url, dealer_player_id')
+      .select('id, created_at, name, status, bounty_amount, entry_fee, prize_distribution, current_level, level_started_at, paused_seconds_remaining, started_at, finished_at, blind_structure_id, poster_url, dealer_player_id')
       .eq('id', id)
       .single(),
     supabase

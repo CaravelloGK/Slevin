@@ -42,9 +42,13 @@ export function useBlindTimer(
     }
 
     if (isPaused) {
-      // Compute once so secondsLeft is correct when dealer clicks Resume
+      // Use the server-frozen value stored at pause time.
+      // Recomputing from level_started_at would lose seconds as wall-clock advances during pause.
+      const frozen = tournament.paused_seconds_remaining
       setSecondsLeft(
-        computeSecondsLeft(tournament.level_started_at, currentLevel.duration_minutes * 60),
+        frozen !== null && frozen !== undefined
+          ? frozen
+          : computeSecondsLeft(tournament.level_started_at!, currentLevel.duration_minutes * 60),
       )
       return
     }

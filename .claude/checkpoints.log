@@ -11,3 +11,6 @@
 2026-03-13-02:56 | phase-7-fixes | 9995204
 2026-03-13-03:08 | phase-3-complete | c960f74 | offline safety: replay-queue, offline banner, sync toast — 35/35 tests
 2026-03-13-03:11 | build-fix-bounty-prop | ecf3970
+2026-03-13-07:11 | phase-4-audio-complete | a6d5d1f
+2026-03-13-07:49 | phase-7-ui-refactor | 6eefd6f
+2026-03-14-13:26 | session-2026-03-14 | 6dfaf0e

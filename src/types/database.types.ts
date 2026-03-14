@@ -51,6 +51,7 @@ export type Database = {
           level_started_at: string | null
           started_at: string | null
           finished_at: string | null
+          paused_seconds_remaining: number | null
           prize_distribution: Json
           blind_structure_id: string
           poster_url: string | null
@@ -68,6 +69,7 @@ export type Database = {
           level_started_at?: string | null
           started_at?: string | null
           finished_at?: string | null
+          paused_seconds_remaining?: number | null
           prize_distribution?: Json
           blind_structure_id: string
           poster_url?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           level_started_at?: string | null
           started_at?: string | null
           finished_at?: string | null
+          paused_seconds_remaining?: number | null
           prize_distribution?: Json
           blind_structure_id?: string
           poster_url?: string | null
